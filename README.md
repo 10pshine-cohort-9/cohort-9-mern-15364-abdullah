@@ -14,7 +14,7 @@ A full-stack Notes application built for 10Pearls Shine Internship.
 - Mocha/Chai
 
 ## Project Structure
-```
+```text
 .
 ├── frontend
 └── backend
@@ -28,9 +28,12 @@ cd frontend
 npm install
 npm run dev
 ```
-
-### Backend
 ```bash
 cd backend
 npm install
+npm run dev
 ```
+
+Health Check
+
+http://localhost:5000
