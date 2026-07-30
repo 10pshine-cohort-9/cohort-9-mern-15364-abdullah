@@ -1,4 +1,4 @@
-# 📝 Notes App (MERN)
+# 📝 Notes App (full-stack Notes application)
 
 A full-stack Notes application
 
