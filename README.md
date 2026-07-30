@@ -1,39 +1,110 @@
-# cohort-9-mern-15364-abdullah
-# Cohort 9 — MERN (NodeJS+ReactJS) assignment for Abdullah Ejaz
+# 📝 Notes App (MERN)
 
-# Notes App (MERN)
-A full-stack Notes application built for 10Pearls Shine Internship.
+A full-stack Notes application
 
 ## Tech Stack
-- React (Vite)
+
+### Frontend
+
+- React.js (Vite)
+
+### Backend
+
 - Node.js
 - Express.js
-- MySQL
-- Pino Logger
-- Jest
-- Mocha/Chai
+
+### Database
+
+- PostgreSQL
+
+---
 
 ## Project Structure
+
 ```text
 .
 ├── frontend
 └── backend
 ```
 
-## Getting Started
+---
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
+## Prerequisites
+
+- Node.js
+- npm
+- PostgreSQL
+- pgAdmin 4
+
+---
+
+## Database Setup
+
+1. Create a PostgreSQL database named:
+
+```text
+notes_app
 ```
+
+2. Open **pgAdmin 4** and execute:
+
+```text
+backend/src/database/schema.sql
+```
+
+3. Create a `.env` file inside the `backend` folder.
+
+Example:
+
+```env
+PORT=5000
+
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=notes_app
+DB_USER=postgres
+DB_PASSWORD=your_password
+```
+
+---
+
+## Backend Setup
+
 ```bash
 cd backend
 npm install
 npm run dev
 ```
 
-Health Check
+Backend runs at:
 
+```text
 http://localhost:5000
+```
+
+---
+
+## Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend runs at:
+
+```text
+http://localhost:5173
+```
+
+---
+
+## Current Features
+
+- React + Vite frontend setup
+- Express.js backend setup
+- PostgreSQL database connection
+- Users table
+- Notes table
+- Database schema
