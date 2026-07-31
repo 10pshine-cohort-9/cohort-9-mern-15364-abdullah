@@ -8,11 +8,11 @@ async function startServer() {
   try {
     await pool.query("SELECT NOW()");
     console.log("Database connected successfully");
-
-
+ 
+  
     app.listen(PORT, () => {
       console.log(`App is running on ${PORT}`);
-    });
+    }); 
   } catch (error) {
     console.error("Error connecting to the database:", error.message);
     process.exit(1);
