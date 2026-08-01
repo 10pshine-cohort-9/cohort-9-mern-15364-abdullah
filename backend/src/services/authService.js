@@ -8,17 +8,16 @@ import { generateToken } from "../utils/generateToken.js";
 import appError from "../utils/appError.js";
 
 export async function registerUser(fullName, email, password) {
-  // Check if user already exists
+  
   const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
     throw new appError("User already exists", 409);
   }
 
-  // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Save user
+
   const user = await createUser(fullName, email, hashedPassword);
 
   return user;
@@ -28,13 +27,13 @@ export async function loginUser(email, password) {
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new appError("User doesnt exist", 401);
+    throw new appError("Invalid email or password", 401);
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new appError("Invalid password", 401);
+    throw new appError("Invalid email or password", 401);
   }
 
   const token = generateToken(user.id);
