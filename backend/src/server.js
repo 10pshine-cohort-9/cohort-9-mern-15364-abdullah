@@ -1,5 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
 
 import app from "./app.js";
 import pool from "./config/db.js";
@@ -17,7 +16,10 @@ async function startServer() {
     });
   } catch (error) {
     logger.error({ err: error }, "Error connecting to the database");
-    process.exit(1);
+
+    logger.flush(() => {
+      process.exit(1);
+    });
   }
 }
 
