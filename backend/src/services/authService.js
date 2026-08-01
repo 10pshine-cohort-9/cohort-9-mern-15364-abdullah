@@ -5,13 +5,14 @@ import {
   findUserById,
 } from "../repositories/authRepository.js";
 import { generateToken } from "../utils/generateToken.js";
+import appError from "../utils/appError.js";
 
 export async function registerUser(fullName, email, password) {
   // Check if user already exists
   const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
-    throw new Error("User already exists");
+    throw new appError("User already exists", 409);
   }
 
   // Hash password
@@ -27,13 +28,13 @@ export async function loginUser(email, password) {
   const user = await findUserByEmail(email);
 
   if (!user) {
-    throw new Error("User doesnt exist");
+    throw new appError("User doesnt exist", 401);
   }
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {
-    throw new Error("Invalid password");
+    throw new appError("Invalid password", 401);
   }
 
   const token = generateToken(user.id);
@@ -52,7 +53,7 @@ export async function getUserProfile(userId) {
   const user = await findUserById(userId);
 
   if (!user) {
-    throw new Error("User not found");
+    throw new appError("User not found", 404);
   }
 
   return user;

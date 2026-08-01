@@ -1,11 +1,20 @@
 import pkg from "pg";
 import dotenv from "dotenv";
+import logger from "./logger.js";
 
 dotenv.config();
 
 const { Pool } = pkg;
 
-const requiredEnv = ["DB_HOST", "DB_PORT", "DB_NAME", "DB_USER", "DB_PASSWORD","JWT_SECRET", "JWT_EXPIRES_IN"];
+const requiredEnv = [
+  "DB_HOST",
+  "DB_PORT",
+  "DB_NAME",
+  "DB_USER",
+  "DB_PASSWORD",
+  "JWT_SECRET",
+  "JWT_EXPIRES_IN",
+];
 
 for (const key of requiredEnv) {
   if (!process.env[key]) {
@@ -25,7 +34,7 @@ const pool = new Pool({
 });
 
 pool.on("error", (err) => {
-  console.error("Unexpected database error:", err.message);
+  logger.error("Unexpected database error:", err.message);
 });
 
 export default pool;

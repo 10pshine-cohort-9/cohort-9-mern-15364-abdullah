@@ -16,7 +16,7 @@ export async function register(req, res) {
       data: user,
     });
   } catch (error) {
-    return res.status(400).json({
+    return res.status(error.statusCode || 400).json({
       success: false,
       message: error.message,
     });
@@ -34,7 +34,7 @@ export async function login(req, res) {
       data: result,
     });
   } catch (error) {
-    return res.status(401).json({
+    return res.status(error.statusCode || 401).json({
       success: false,
       message: error.message,
     });
@@ -51,7 +51,7 @@ export async function getProfile(req, res) {
       data: user,
     });
   } catch (error) {
-    return res.status(404).json({
+    return res.status(error.statusCode || 404).json({
       success: false,
       message: error.message,
     });
