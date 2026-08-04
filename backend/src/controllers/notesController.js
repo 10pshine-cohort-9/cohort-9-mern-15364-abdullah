@@ -7,11 +7,20 @@ import {
 } from "../services/notesService.js";
 import logger from "../config/logger.js";
 
+function isValidNotePayload(title, content) {
+  return (
+    typeof title === "string" &&
+    title.trim() &&
+    typeof content === "string" &&
+    content.trim()
+  );
+}
+
 async function createNote(req, res) {
   try {
     const { title, content } = req.body;
 
-    if (!title || !content) {
+    if (!isValidNotePayload(title, content)) {
       return res.status(400).json({
         success: false,
         message: "Title and content are required",

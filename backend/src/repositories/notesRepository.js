@@ -8,10 +8,12 @@ async function createNote(title, content, userId) {
   `;
 
   const values = [title, content, userId];
-
-  const result = await pool.query(query, values);
-
-  return result.rows[0];
+  try {
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    throw new Error("Error creating note");
+  }
 }
 
 async function getNotesByUserId(userId) {
@@ -21,10 +23,12 @@ async function getNotesByUserId(userId) {
     WHERE user_id = $1
     ORDER BY created_at DESC;
   `;
-
-  const result = await pool.query(query, [userId]);
-
-  return result.rows;
+  try {
+    const result = await pool.query(query, [userId]);
+    return result.rows;
+  } catch (error) {
+    throw new Error("Error fetching notes");
+  }
 }
 
 async function getNoteById(noteId, userId) {
@@ -35,9 +39,13 @@ async function getNoteById(noteId, userId) {
       AND user_id = $2;
   `;
 
-  const result = await pool.query(query, [noteId, userId]);
-
-  return result.rows[0];
+  const values = [noteId, userId];
+  try {
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    throw new Error("Error fetching note");
+  }
 }
 
 async function updateNote(noteId, title, content, userId) {
@@ -52,14 +60,16 @@ async function updateNote(noteId, title, content, userId) {
     RETURNING *;
   `;
 
-  const values = [title, content, userId];
+  const values = [title, content, noteId, userId];
 
-  const result = await pool.query(query, [title, content, noteId, userId]);
-
-  return result.rows[0]
-
+  try {
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  } catch (error) {
+    throw new Error("Error updating note");
+  }
 }
-  
+
 async function deleteNote(noteId, userId) {
   const query = `
     DELETE FROM notes
@@ -68,9 +78,14 @@ async function deleteNote(noteId, userId) {
     RETURNING *;
   `;
 
-  const result = await pool.query(query, [noteId, userId]);
+  const values = [noteId, userId];
+  try {
+    const result = await pool.query(query, values);
 
-  return result.rows[0];
+    return result.rows[0];
+  } catch (error) {
+    throw new Error("Error deleting note");
+  }
 }
 
 export { createNote, getNotesByUserId, getNoteById, updateNote, deleteNote };
