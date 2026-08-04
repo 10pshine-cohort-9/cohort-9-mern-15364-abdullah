@@ -7,24 +7,29 @@ import {
 } from "../services/notesService.js";
 import logger from "../config/logger.js";
 
-function isValidNotePayload(title, content) {
-  return (
-    typeof title === "string" &&
-    title.trim() &&
-    typeof content === "string" &&
-    content.trim()
-  );
+function validateNotePayload(title, content) {
+  if (
+    typeof title !== "string" ||
+    typeof content !== "string" ||
+    title.trim() === "" ||
+    content.trim() === ""
+  ) {
+    return {
+      success: false,
+      message: "Title and content are required",
+    };
+  }
+
+  return null;
 }
 
 async function createNote(req, res) {
   try {
     const { title, content } = req.body;
+    const validationError = validateNotePayload(title, content);
 
-    if (!isValidNotePayload(title, content)) {
-      return res.status(400).json({
-        success: false,
-        message: "Title and content are required",
-      });
+    if (validationError) {
+      return res.status(400).json(validationError);
     }
     const note = await createUserNote(title, content, req.user.id);
 
@@ -85,7 +90,11 @@ async function getSingleNote(req, res) {
 async function updateNote(req, res) {
   try {
     const { title, content } = req.body;
+    const validationError = validateNotePayload(title, content);
 
+    if (validationError) {
+      return res.status(400).json(validationError);
+    }
     const note = await updateUserNote(
       req.params.id,
       title,

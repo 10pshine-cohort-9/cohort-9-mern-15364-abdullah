@@ -1,4 +1,5 @@
 import pool from "../config/db.js";
+import logger from "../config/logger.js";
 
 async function createNote(title, content, userId) {
   const query = `
@@ -12,6 +13,7 @@ async function createNote(title, content, userId) {
     const result = await pool.query(query, values);
     return result.rows[0];
   } catch (error) {
+    logger.error({ err: error }, "Error creating note");
     throw new Error("Error creating note");
   }
 }
@@ -27,6 +29,7 @@ async function getNotesByUserId(userId) {
     const result = await pool.query(query, [userId]);
     return result.rows;
   } catch (error) {
+    logger.error({ err: error }, "Error fetching notes");
     throw new Error("Error fetching notes");
   }
 }
@@ -44,6 +47,7 @@ async function getNoteById(noteId, userId) {
     const result = await pool.query(query, values);
     return result.rows[0];
   } catch (error) {
+    logger.error({ err: error }, "Error fetching note");
     throw new Error("Error fetching note");
   }
 }
@@ -66,6 +70,7 @@ async function updateNote(noteId, title, content, userId) {
     const result = await pool.query(query, values);
     return result.rows[0];
   } catch (error) {
+    logger.error({ err: error }, "Error updating note");
     throw new Error("Error updating note");
   }
 }
@@ -84,6 +89,7 @@ async function deleteNote(noteId, userId) {
 
     return result.rows[0];
   } catch (error) {
+    logger.error({ err: error }, "Error deleting note");
     throw new Error("Error deleting note");
   }
 }
