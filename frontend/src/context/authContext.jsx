@@ -32,15 +32,23 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function register(data) {
-    return await registerUser(data);
+    try {
+      return await registerUser(data);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async function login(data) {
-    const response = await loginUser(data);
+    try {
+      const response = await loginUser(data);
 
-    localStorage.setItem(TOKEN_KEY, response.data.token);
+      localStorage.setItem(TOKEN_KEY, response.data.token);
 
-    setUser(response.data.user);
+      setUser(response.data.user);
+    } catch (error) {
+      throw error;
+    }
   }
 
   function logout() {

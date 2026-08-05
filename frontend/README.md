@@ -1,9 +1,16 @@
-# Notes App Frontend
+### Tech Stack
 
-React frontend for the Notes App built using Vite.
+- React
+- React Router DOM
+- Axios
+- Context API
 
-## Run
+### Features
 
-```bash
-npm install
-npm run dev
+- Register
+- Login
+- Logout
+- Dashboard
+- Protected Routes
+- Public Routes
+- Session Persistence
