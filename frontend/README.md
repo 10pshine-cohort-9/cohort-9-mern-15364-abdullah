@@ -1,11 +1,24 @@
-### Tech Stack
+# Frontend
+
+React frontend for the Notes App.
+
+## Tech Stack
 
 - React
+- Vite
 - React Router DOM
 - Axios
 - Context API
 
-### Features
+## Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Features
 
 - Register
 - Login

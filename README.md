@@ -104,7 +104,9 @@ DB_NAME=notes_app
 DB_USER=postgres
 DB_PASSWORD=your_password
 
-JWT_SECRET=your_jwt_secret
+JWT_SECRET=<generate-a-long-random-secret>
+# Example:
+# openssl rand -base64 32
 ```
 
 ---
