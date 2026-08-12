@@ -126,7 +126,6 @@ const Login = () => {
               </div>
             </div>
           </div>
-
         </section>
 
         {/* RIGHT SIDE — LOGIN FORM */}
@@ -196,10 +195,15 @@ const Login = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
+                      aria-invalid={Boolean(errors.email)}
+                      aria-describedby={
+                        errors.email ? "email-error" : undefined
+                      }
                       className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] pl-10 pr-4 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                     />
+
                     {errors.email && (
-                      <p className="mt-2 text-xs text-red-400">
+                      <p id="email-error" className="mt-2 text-xs text-red-400">
                         {errors.email}
                       </p>
                     )}
@@ -232,16 +236,24 @@ const Login = () => {
 
                     <input
                       id="password"
-                      type={showPassword ? "text" : "password"}
+                      type="password"
                       name="password"
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={handleChange}
                       required
-                      className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] pl-10 pr-11 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
+                      aria-invalid={Boolean(errors.password)}
+                      aria-describedby={
+                        errors.password ? "password-error" : undefined
+                      }
+                      className="..."
                     />
+
                     {errors.password && (
-                      <p className="mt-2 text-xs text-red-400">
+                      <p
+                        id="password-error"
+                        className="mt-2 text-xs text-red-400"
+                      >
                         {errors.password}
                       </p>
                     )}

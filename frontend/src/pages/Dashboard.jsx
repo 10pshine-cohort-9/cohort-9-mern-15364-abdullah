@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/authContext.jsx";
 import { useNavigate } from "react-router-dom";
 import {
@@ -38,6 +38,16 @@ const Dashboard = () => {
   const [actionError, setActionError] = useState("");
 
   const [deleteNoteTarget, setDeleteNoteTarget] = useState(null);
+  const cancelDeleteButtonRef = useRef(null);
+  const deleteTriggerRef = useRef(null);
+
+  useEffect(() => {
+    if (deleteNoteTarget) {
+      cancelDeleteButtonRef.current?.focus();
+    } else {
+      deleteTriggerRef.current?.focus();
+    }
+  }, [deleteNoteTarget]);
 
   useEffect(() => {
     async function fetchNotes() {
@@ -71,7 +81,7 @@ const Dashboard = () => {
 
   /*
    * Temporary UI data.
-   * We will replace this with your Notes CRUD API later.
+   * Will replace this with foldErs CRUD APIss later.
    */
   const [folders, setFolders] = useState([
     { name: "Work", count: 4 },
@@ -125,7 +135,8 @@ const Dashboard = () => {
 
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
-      const matchesFolder = selectedFolder === "All Notes";
+      const matchesFolder =
+        selectedFolder === "All Notes" || note.folder === selectedFolder;
 
       const searchText = search.toLowerCase().trim();
 
@@ -202,7 +213,7 @@ const Dashboard = () => {
         currentNotes.filter((note) => note.id !== noteId),
       );
 
-      setDeletingNote(null);
+      setDeleteNoteTarget(null);
     } catch (error) {
       setActionError(error.response?.data?.message || "Failed to delete note.");
     } finally {
@@ -362,7 +373,13 @@ const Dashboard = () => {
               onMouseEnter={() => setShowProfile(true)}
               onMouseLeave={() => setShowProfile(false)}
             >
-              <button className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 font-semibold text-black transition hover:scale-105">
+              <button
+                type="button"
+                onClick={() => setShowProfile((current) => !current)}
+                aria-expanded={showProfile}
+                aria-haspopup="menu"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 font-semibold text-black transition hover:scale-105"
+              >
                 {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
               </button>
 
@@ -620,7 +637,11 @@ const Dashboard = () => {
 
           {/* NOTES GRID*/}
 
-          {filteredNotes.length > 0 ? (
+          {notesLoading ? (
+            <p className="py-16 text-center text-sm text-gray-500">
+              Loading notes...
+            </p>
+          ) : filteredNotes.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredNotes.map((note) => (
                 <article
@@ -632,9 +653,11 @@ const Dashboard = () => {
                       {note.title}
                     </h3>
 
-                    <span className="shrink-0 rounded-full bg-[#f5a623]/10 px-2.5 py-1 text-[11px] font-medium text-orange-500">
-                      #{note.folder}
-                    </span>
+                    {note.folder && (
+                      <span className="shrink-0 rounded-full bg-[#f5a623]/10 px-2.5 py-1 text-[11px] font-medium text-orange-500">
+                        #{note.folder}
+                      </span>
+                    )}
                   </div>
 
                   <p className="mt-4 line-clamp-4 text-sm leading-6 text-gray-400">
@@ -642,10 +665,15 @@ const Dashboard = () => {
                   </p>
 
                   <div className="mt-6 flex items-center justify-between">
-                    <span className="text-xs text-gray-600">{note.date}</span>
+                    <span className="text-xs text-gray-600">
+                      {note.created_at
+                        ? new Date(note.created_at).toLocaleDateString()
+                        : ""}
+                    </span>
 
                     <div className="flex gap-2 opacity-0 transition group-hover:opacity-100">
                       <button
+                        type="button"
                         onClick={() => handleEditNote(note)}
                         className="rounded-lg bg-white/5 px-2.5 py-1.5 text-xs text-gray-400 hover:bg-white/10 hover:text-white"
                         title="Edit note"
@@ -654,8 +682,14 @@ const Dashboard = () => {
                       </button>
 
                       <button
-                        onClick={() => setDeleteNoteTarget(note)}
+                        type="button"
+                        onClick={(event) => {
+                          deleteTriggerRef.current = event.currentTarget;
+                          setDeleteNoteTarget(note);
+                        }}
+                        disabled={deletingNoteId === note.id}
                         className="rounded-lg bg-white/5 px-2.5 py-1.5 text-xs text-gray-400 hover:bg-red-500/10 hover:text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Delete note"
                       >
                         {deletingNoteId === note.id ? "Deleting..." : "Delete"}
                       </button>
@@ -680,9 +714,26 @@ const Dashboard = () => {
         </div>
 
         {deleteNoteTarget && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171d25] p-6 shadow-2xl">
-              <h3 className="text-lg font-semibold text-white">Delete note?</h3>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setDeleteNoteTarget(null);
+              }
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="delete-note-title"
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171d25] p-6 shadow-2xl"
+            >
+              <h3
+                id="delete-note-title"
+                className="text-lg font-semibold text-white"
+              >
+                Delete note?
+              </h3>
 
               <p className="mt-2 text-sm leading-6 text-gray-400">
                 Are you sure you want to delete{" "}
@@ -694,6 +745,7 @@ const Dashboard = () => {
 
               <div className="mt-6 flex justify-end gap-3">
                 <button
+                  ref={cancelDeleteButtonRef}
                   type="button"
                   onClick={() => setDeleteNoteTarget(null)}
                   className="rounded-xl bg-white/5 px-5 py-2.5 text-sm text-gray-300 hover:bg-white/10"
@@ -704,12 +756,26 @@ const Dashboard = () => {
                 <button
                   type="button"
                   onClick={() => handleDeleteNote(deleteNoteTarget.id)}
-                  className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600"
+                  disabled={deletingNoteId === deleteNoteTarget.id}
+                  className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Delete
+                  {deletingNoteId === deleteNoteTarget.id
+                    ? "Deleting..."
+                    : "Delete"}
                 </button>
               </div>
             </div>
+          </div>
+        )}
+        {notesError && (
+          <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {notesError}
+          </div>
+        )}
+
+        {actionError && (
+          <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            {actionError}
           </div>
         )}
 
@@ -730,7 +796,15 @@ const Dashboard = () => {
             />
           </div>
 
-          <button className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500 text-2xl font-light text-black shadow-xl transition hover:scale-105">
+          <button
+            type="button"
+            aria-label="Create note"
+            onClick={() => {
+              setCreateNoteError("");
+              setShowNoteForm(true);
+            }}
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500 text-2xl font-light text-black shadow-xl transition hover:scale-105"
+          >
             +
           </button>
         </div>

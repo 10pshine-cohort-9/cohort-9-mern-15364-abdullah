@@ -7,7 +7,7 @@ export async function registerUser(userData) {
     const response = await axios.post(`${BASE_URL}/register`, userData);
     return response.data;
   } catch (error) {
-    throw error.message;
+    throw error;
   }
 }
 
@@ -16,7 +16,7 @@ export async function loginUser(credentials) {
     const response = await axios.post(`${BASE_URL}/login`, credentials);
     return response.data;
   } catch (error) {
-    throw error.message;
+    throw error;
   }
 }
  
@@ -29,6 +29,6 @@ export async function getProfile(token) {
     });
     return response.data;
   } catch (error) {
-    throw error.message;
+    throw error;
   }
 }
