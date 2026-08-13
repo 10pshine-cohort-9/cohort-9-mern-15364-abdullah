@@ -19,7 +19,7 @@ export async function loginUser(credentials) {
     throw error;
   }
 }
-
+ 
 export async function getProfile(token) {
   try {
     const response = await axios.get(`${BASE_URL}/profile`, {
