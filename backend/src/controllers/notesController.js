@@ -7,7 +7,7 @@ import {
 } from "../services/notesService.js";
 import logger from "../config/logger.js";
 
-function validateNotePayload(title, content) {
+function validateNotePayload(title, content, folder_id) {
   if (
     typeof title !== "string" ||
     typeof content !== "string" ||
@@ -20,18 +20,30 @@ function validateNotePayload(title, content) {
     };
   }
 
+  if (!Number.isInteger(Number(folder_id))) {
+    return {
+      success: false,
+      message: "Folder is required",
+    };
+  }
+
   return null;
 }
 
 async function createNote(req, res) {
   try {
-    const { title, content } = req.body;
-    const validationError = validateNotePayload(title, content);
+    const { title, content, folder_id } = req.body;
+    const validationError = validateNotePayload(title, content, folder_id);
 
     if (validationError) {
       return res.status(400).json(validationError);
     }
-    const note = await createUserNote(title, content, req.user.id);
+    const note = await createUserNote(
+      title.trim(),
+      content,
+      req.user.id,
+      Number(folder_id),
+    );
 
     return res.status(201).json({
       success: true,
@@ -89,8 +101,8 @@ async function getSingleNote(req, res) {
 
 async function updateNote(req, res) {
   try {
-    const { title, content } = req.body;
-    const validationError = validateNotePayload(title, content);
+    const { title, content, folder_id } = req.body;
+    const validationError = validateNotePayload(title, content, folder_id);
 
     if (validationError) {
       return res.status(400).json(validationError);
@@ -100,6 +112,7 @@ async function updateNote(req, res) {
       title,
       content,
       req.user.id,
+      Number(folder_id),
     );
 
     return res.status(200).json({
