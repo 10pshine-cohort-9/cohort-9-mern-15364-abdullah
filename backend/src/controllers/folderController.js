@@ -15,6 +15,16 @@ async function validateFolderName(name) {
   return null;
 }
 
+function parseFolderId(id) {
+  const parsedId = Number(id);
+
+  if (!/^\d+$/.test(id) || !Number.isSafeInteger(parsedId) || parsedId <= 0) {
+    return null;
+  }
+
+  return parsedId;
+}
+
 async function createFolder(req, res) {
   try {
     const { name } = req.body;
@@ -52,11 +62,16 @@ async function updateFolder(req, res) {
       return res.status(400).json(validationError);
     }
 
-    const folder = await updateUserFolder(
-      req.params.id,
-      name.trim(),
-      req.user.id,
-    );
+    const folderId = parseFolderId(req.params.id);
+
+    if (folderId === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid folder ID",
+      });
+    }
+
+    const folder = await updateUserFolder(folderId, name.trim(), req.user.id);
 
     return res.status(200).json({
       success: true,
@@ -75,7 +90,15 @@ async function updateFolder(req, res) {
 
 async function deleteFolder(req, res) {
   try {
-    await deleteUserFolder(req.params.id, req.user.id);
+    const folderId = parseFolderId(req.params.id);
+
+    if (folderId === null) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid folder ID",
+      });
+    }
+    await deleteUserFolder(folderId, req.user.id);
 
     return res.status(200).json({
       success: true,

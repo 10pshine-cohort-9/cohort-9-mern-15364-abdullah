@@ -20,10 +20,15 @@ function validateNotePayload(title, content, folder_id) {
     };
   }
 
-  if (!Number.isInteger(Number(folder_id))) {
+  if (
+    (typeof folder_id !== "number" &&
+      (typeof folder_id !== "string" || !/^\d+$/.test(folder_id))) ||
+    !Number.isSafeInteger(Number(folder_id)) ||
+    Number(folder_id) <= 0
+  ) {
     return {
       success: false,
-      message: "Folder is required",
+      message: "Valid folder ID is required",
     };
   }
 

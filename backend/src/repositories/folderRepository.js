@@ -13,7 +13,7 @@ async function createFolder(name, userId) {
     return result.rows[0];
   } catch (error) {
     logger.error({ err: error }, "Error creating folder");
-    throw new Error("Error creating folder");
+    throw error;
   }
 }
 
@@ -31,7 +31,7 @@ async function updateFolder(folderId, name, userId) {
     return result.rows[0];
   } catch (error) {
     logger.error({ err: error }, "Error updating folder");
-    throw new Error("Error updating folder");
+    throw error;
   }
 }
 
@@ -65,7 +65,7 @@ async function getFolderById(folderId, userId) {
     return result.rows[0];
   } catch (error) {
     logger.error({ err: error }, "Error fetching folder");
-    throw new Error("Error fetching folder");
+    throw error;
   }
 }
 

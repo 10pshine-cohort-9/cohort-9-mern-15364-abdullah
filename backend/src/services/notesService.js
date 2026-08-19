@@ -9,18 +9,32 @@ import { getFolderById } from "../repositories/folderRepository.js";
 import appError from "../utils/appError.js";
 
 async function validateUserFolder(folder_id, userId) {
-  const folder = await getFolderById(folder_id, userId);
+  try {
+    const folder = await getFolderById(folder_id, userId);
 
-  if (!folder) {
-    throw new appError("Folder not found", 404);
+    if (!folder) {
+      throw new appError("Folder not found", 404);
+    }
+
+    return folder;
+  } catch (error) {
+    if (error instanceof appError) {
+      throw error;
+    }
+    throw new appError("Failed to validate folder", 500);
   }
-
-  return folder;
 }
 async function createUserNote(title, content, userId, folder_id) {
-  await validateUserFolder(folder_id, userId);
-  const note = await createNote(title, content, userId, folder_id);
-  return note;
+  try {
+    await validateUserFolder(folder_id, userId);
+    const note = await createNote(title, content, userId, folder_id);
+    return note;
+  } catch (error) {
+    if (error instanceof appError) {
+      throw error;
+    }
+    throw new appError("Failed to create note", 500);
+  }
 }
 
 async function getUserNotes(userId) {
@@ -37,13 +51,20 @@ async function getUserNoteById(noteId, userId) {
 }
 
 async function updateUserNote(noteId, title, content, userId, folder_id) {
-  await validateUserFolder(folder_id, userId);
-
-  const note = await updateNote(noteId, title, content, userId, folder_id);
-  if (!note) {
-    throw new appError("Note not found", 404);
+  try {
+    await validateUserFolder(folder_id, userId);
+    const note = await updateNote(noteId, title, content, userId, folder_id);
+    
+    if (!note) {
+      throw new appError("Note not found", 404);
+    }
+    return note;
+  } catch (error) {
+    if (error instanceof appError) {
+      throw error;
+    }
+    throw new appError("Failed to update note", 500);
   }
-  return note;
 }
 
 async function deleteUserNote(noteId, userId) {
