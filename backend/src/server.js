@@ -20,7 +20,7 @@ async function startServer() {
     logger.flush(() => {
       process.exit(1);
     });
-  } 
+  }  
 } 
 
 startServer();

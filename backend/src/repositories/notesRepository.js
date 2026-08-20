@@ -1,14 +1,14 @@
 import pool from "../config/db.js";
 import logger from "../config/logger.js";
 
-async function createNote(title, content, userId) {
+async function createNote(title, content, userId, folder_id) {
   const query = `
-    INSERT INTO notes (title, content, user_id)
-    VALUES ($1, $2, $3)
+    INSERT INTO notes (title, content, user_id, folder_id)
+    VALUES ($1, $2, $3, $4)
     RETURNING *;
   `;
 
-  const values = [title, content, userId];
+  const values = [title, content, userId, folder_id];
   try {
     const result = await pool.query(query, values);
     return result.rows[0];
@@ -52,19 +52,20 @@ async function getNoteById(noteId, userId) {
   }
 }
 
-async function updateNote(noteId, title, content, userId) {
+async function updateNote(noteId, title, content, userId, folder_id) {
   const query = `
     UPDATE notes
     SET
       title = $1,
       content = $2,
+      folder_id = $3,
       updated_at = CURRENT_TIMESTAMP
-    WHERE id = $3
-      AND user_id = $4
+    WHERE id = $4
+      AND user_id = $5
     RETURNING *;
   `;
 
-  const values = [title, content, noteId, userId];
+  const values = [title, content, folder_id, noteId, userId];
 
   try {
     const result = await pool.query(query, values);

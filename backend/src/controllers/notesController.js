@@ -7,7 +7,7 @@ import {
 } from "../services/notesService.js";
 import logger from "../config/logger.js";
 
-function validateNotePayload(title, content) {
+function validateNotePayload(title, content, folder_id) {
   if (
     typeof title !== "string" ||
     typeof content !== "string" ||
@@ -20,18 +20,35 @@ function validateNotePayload(title, content) {
     };
   }
 
+  if (
+    (typeof folder_id !== "number" &&
+      (typeof folder_id !== "string" || !/^\d+$/.test(folder_id))) ||
+    !Number.isSafeInteger(Number(folder_id)) ||
+    Number(folder_id) <= 0
+  ) {
+    return {
+      success: false,
+      message: "Valid folder ID is required",
+    };
+  }
+
   return null;
 }
 
 async function createNote(req, res) {
   try {
-    const { title, content } = req.body;
-    const validationError = validateNotePayload(title, content);
+    const { title, content, folder_id } = req.body;
+    const validationError = validateNotePayload(title, content, folder_id);
 
     if (validationError) {
       return res.status(400).json(validationError);
     }
-    const note = await createUserNote(title, content, req.user.id);
+    const note = await createUserNote(
+      title.trim(),
+      content,
+      req.user.id,
+      Number(folder_id),
+    );
 
     return res.status(201).json({
       success: true,
@@ -89,8 +106,8 @@ async function getSingleNote(req, res) {
 
 async function updateNote(req, res) {
   try {
-    const { title, content } = req.body;
-    const validationError = validateNotePayload(title, content);
+    const { title, content, folder_id } = req.body;
+    const validationError = validateNotePayload(title, content, folder_id);
 
     if (validationError) {
       return res.status(400).json(validationError);
@@ -100,6 +117,7 @@ async function updateNote(req, res) {
       title,
       content,
       req.user.id,
+      Number(folder_id),
     );
 
     return res.status(200).json({
