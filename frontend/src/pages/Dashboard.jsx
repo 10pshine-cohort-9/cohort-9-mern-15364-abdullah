@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../context/authContext.jsx";
 import { useNavigate } from "react-router-dom";
 import {
@@ -7,6 +7,43 @@ import {
   updateNote,
   deleteNote,
 } from "../api/notesApi.js";
+import { createFolder, updateFolder, deleteFolder } from "../api/foldersApi.js";
+import RichTextEditor from "../components/richTextEditor.jsx";
+
+const FOLDERS_STORAGE_KEY = "focusnote-folders";
+
+function getFoldersStorageKey(userId) {
+  return `${FOLDERS_STORAGE_KEY}-${userId}`;
+}
+
+function getStoredFolders(userId) {
+  if (!userId) return [];
+
+  try {
+    const storedFolders = JSON.parse(
+      localStorage.getItem(getFoldersStorageKey(userId)) || "[]",
+    );
+
+    if (!Array.isArray(storedFolders)) return [];
+
+    const uniqueFolders = new Map();
+
+    storedFolders.forEach((folder) => {
+      const folderId = Number(folder.id);
+
+      if (Number.isSafeInteger(folderId) && folder.name) {
+        uniqueFolders.set(folderId, {
+          id: folderId,
+          name: folder.name,
+        });
+      }
+    });
+
+    return Array.from(uniqueFolders.values());
+  } catch {
+    return [];
+  }
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -36,8 +73,10 @@ const Dashboard = () => {
 
   const [deletingNoteId, setDeletingNoteId] = useState(null);
   const [actionError, setActionError] = useState("");
+  const [deleteFolderError, setDeleteFolderError] = useState("");
 
   const [deleteNoteTarget, setDeleteNoteTarget] = useState(null);
+  const [selectedNote, setSelectedNote] = useState(null);
   const cancelDeleteButtonRef = useRef(null);
   const deleteTriggerRef = useRef(null);
 
@@ -79,16 +118,21 @@ const Dashboard = () => {
     fetchNotes();
   }, []);
 
-  /*
-   * Temporary UI data.
-   * Will replace this with foldErs CRUD APIss later.
-   */
-  const [folders, setFolders] = useState([
-    { name: "Work", count: 4 },
-    { name: "Personal", count: 3 },
-    { name: "Ideas", count: 2 },
-    { name: "Travel", count: 1 },
-  ]);
+  const [folders, setFolders] = useState(() => getStoredFolders(user?.id));
+
+  const [editingFolder, setEditingFolder] = useState(null);
+  const [editFolderName, setEditFolderName] = useState("");
+
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      localStorage.setItem(
+        getFoldersStorageKey(user.id),
+        JSON.stringify(folders),
+      );
+    }
+  }, [folders, user?.id]);
 
   const handleLogout = () => {
     logout();
@@ -104,7 +148,7 @@ const Dashboard = () => {
     }));
   };
 
-  const handleCreateFolder = (e) => {
+  const handleCreateFolder = async (e) => {
     e.preventDefault();
 
     const folderName = newFolder.trim();
@@ -121,22 +165,94 @@ const Dashboard = () => {
       return;
     }
 
-    setFolders((currentFolders) => [
-      ...currentFolders,
-      {
-        name: folderName,
-        count: 0,
-      },
-    ]);
+    const token = localStorage.getItem("token");
 
-    setNewFolder("");
-    setShowFolderInput(false);
+    if (!token) {
+      console.error("Authentication token not found.");
+      return;
+    }
+
+    try {
+      const response = await createFolder(token, folderName);
+
+      const createdFolder = response.data;
+
+      setFolders((currentFolders) => [
+        ...currentFolders.filter((folder) => folder.id !== createdFolder.id),
+        { id: createdFolder.id, name: createdFolder.name },
+      ]);
+
+      setNewFolder("");
+      setShowFolderInput(false);
+    } catch (error) {
+      console.error("Failed to create folder:", error.response?.data || error);
+    }
   };
+
+  const handleEditFolder = (folder) => {
+    setEditingFolder(folder);
+    setEditFolderName(folder.name);
+  };
+
+  const handleUpdateFolder = async (e) => {
+    e.preventDefault();
+
+    const updatedName = editFolderName.trim();
+
+    if (!updatedName) return;
+
+    const alreadyExists = folders.some(
+      (folder) =>
+        folder.name.toLowerCase() === updatedName.toLowerCase() &&
+        folder.id !== editingFolder.id,
+    );
+
+    if (alreadyExists) return;
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      console.error("Authentication token not found.");
+      return;
+    }
+
+    try {
+      const response = await updateFolder(token, editingFolder.id, updatedName);
+
+      const updatedFolder = response.data;
+
+      setFolders((currentFolders) =>
+        currentFolders.map((folder) =>
+          folder.id === editingFolder.id
+            ? {
+                ...folder,
+                name: updatedFolder.name,
+              }
+            : folder,
+        ),
+      );
+
+      // Keep the currently selected folder working after rename
+      if (selectedFolder === editingFolder.name) {
+        setSelectedFolder(updatedFolder.name);
+      }
+
+      setEditingFolder(null);
+      setEditFolderName("");
+    } catch (error) {
+      console.error("Failed to update folder:", error.response?.data || error);
+    }
+  };
+
+  const selectedFolderData = folders.find(
+    (folder) => folder.name === selectedFolder,
+  );
 
   const filteredNotes = useMemo(() => {
     return notes.filter((note) => {
       const matchesFolder =
-        selectedFolder === "All Notes" || note.folder === selectedFolder;
+        selectedFolder === "All Notes" ||
+        Number(note.folder_id) === Number(selectedFolderData?.id);
 
       const searchText = search.toLowerCase().trim();
 
@@ -147,12 +263,43 @@ const Dashboard = () => {
 
       return matchesFolder && matchesSearch;
     });
-  }, [notes, selectedFolder, search]);
+  }, [notes, selectedFolder, selectedFolderData, search]);
 
-  const totalNotes = notes.length;
+  const handleConfirmDeleteFolder = async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token || !deleteFolderTarget) return;
+
+    try {
+      setDeleteFolderError("");
+      setActionError("");
+      await deleteFolder(token, deleteFolderTarget.id);
+
+      if (selectedFolder === deleteFolderTarget.name) {
+        setSelectedFolder("All Notes");
+      }
+
+      setFolders((currentFolders) =>
+        currentFolders.filter((folder) => folder.id !== deleteFolderTarget.id),
+      );
+      setNotes((currentNotes) =>
+        currentNotes.filter(
+          (note) => Number(note.folder_id) !== Number(deleteFolderTarget.id),
+        ),
+      );
+      setDeleteFolderTarget(null);
+    } catch {
+      setDeleteFolderError("Unable to delete this folder. Please try again.");
+    }
+  };
 
   const handleCreateNote = async (e) => {
     e.preventDefault();
+
+    if (selectedFolder === "All Notes") {
+      setCreateNoteError("Please create and select a category before creating a note.");
+      return;
+    }
 
     const title = newNote.title.trim();
     const content = newNote.content.trim();
@@ -173,9 +320,19 @@ const Dashboard = () => {
       setCreatingNote(true);
       setCreateNoteError("");
 
+      const selectedFolderData = folders.find(
+        (folder) => folder.name === selectedFolder,
+      );
+
+      if (!selectedFolderData) {
+        setCreateNoteError("Please create and select a category before creating a note.");
+        return;
+      }
+
       const response = await createNote(token, {
         title,
         content,
+        folder_id: selectedFolderData.id,
       });
 
       // Add the newly created note to the current list
@@ -228,6 +385,18 @@ const Dashboard = () => {
     setActionError("");
   };
 
+  const closeEditNoteModal = () => {
+    setEditingNote(null);
+    setEditTitle("");
+    setEditContent("");
+    setActionError("");
+  };
+
+  const closeEditFolderModal = () => {
+    setEditingFolder(null);
+    setEditFolderName("");
+  };
+
   const handleUpdateNote = async (e) => {
     e.preventDefault();
 
@@ -241,6 +410,7 @@ const Dashboard = () => {
       const response = await updateNote(token, editingNote.id, {
         title: editTitle,
         content: editContent,
+        folder_id: editingNote.folder_id,
       });
 
       setNotes((currentNotes) =>
@@ -263,12 +433,8 @@ const Dashboard = () => {
 
       <aside className="fixed left-0 top-0 hidden h-screen w-64 border-r border-white/10 bg-[#0d1218] lg:flex lg:flex-col">
         {/* Logo */}
-        <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-xl text-white font-bold">
-            FN
-          </div>
-
-          <span className="text-xl font-semibold tracking-tight">
+        <div className="flex h-20 items-center border-b border-white/10 px-6">
+          <span className="text-xl font-bold tracking-tight text-white">
             Focus<span className="text-orange-500">Note</span>
           </span>
         </div>
@@ -288,26 +454,18 @@ const Dashboard = () => {
               <span>▤</span>
               All Notes
             </span>
-
-            <span
-              className={`rounded-full px-2 py-0.5 text-xs ${
-                selectedFolder === "All Notes" ? "bg-black/10" : "bg-white/10"
-              }`}
-            >
-              {totalNotes}
-            </span>
           </button>
 
-          {/* Folders heading */}
+          {/* Categories heading */}
           <div className="mb-3 flex items-center justify-between px-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-gray-500">
-              Folders
+              Categories
             </p>
 
             <button
               onClick={() => setShowFolderInput(true)}
               className="text-lg text-gray-500 transition hover:text-orange-500"
-              title="Create folder"
+              title="Create category"
             >
               +
             </button>
@@ -316,19 +474,63 @@ const Dashboard = () => {
           {/* Folder list */}
           <div className="space-y-1">
             {folders.map((folder) => (
-              <button
-                key={folder.name}
-                onClick={() => setSelectedFolder(folder.name)}
-                className={`flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition ${
-                  selectedFolder === folder.name
-                    ? "bg-white/10 text-white"
-                    : "text-gray-400 hover:bg-white/5 hover:text-white"
-                }`}
-              >
-                <span className="flex items-center gap-3">{folder.name}</span>
+              <div key={folder.id}>
+                <div
+                  className={`group flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition ${
+                    selectedFolder === folder.name
+                      ? "bg-white/10 text-white"
+                      : "text-gray-400 hover:bg-white/5 hover:text-white"
+                  }`}
+                >
+                  {/* Folder name */}
+                  <button
+                    onClick={() => setSelectedFolder(folder.name)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
+                    <span className="truncate">{folder.name}</span>
+                  </button>
 
-                <span className="text-xs text-gray-500">{folder.count}</span>
-              </button>
+                  {/* Count / Actions */}
+                  <div className="flex items-center gap-1">
+                    <div className="hidden items-center gap-1 group-hover:flex">
+                      <button
+                        type="button"
+                        onClick={() => handleEditFolder(folder)}
+                        className="rounded-lg px-2 py-1 text-xs text-gray-400 hover:bg-white/10 hover:text-white"
+                        title="Edit folder"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          const notesInFolder = notes.filter(
+                            (note) => Number(note.folder_id) === Number(folder.id),
+                          );
+
+                          if (notesInFolder.length > 0) {
+                            setDeleteFolderTarget({
+                              ...folder,
+                              notes: notesInFolder,
+                            });
+                            setDeleteFolderError("");
+                            return;
+                          }
+
+                          setDeleteFolderTarget(folder);
+                          setDeleteFolderError("");
+                        }}
+                        className="rounded-lg px-2 py-1 text-xs text-gray-400 hover:bg-red-500/10 hover:text-red-400"
+                        title="Delete folder"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -342,12 +544,8 @@ const Dashboard = () => {
         <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0b0f14]/95 backdrop-blur m-auto ">
           <div className="flex h-20 items-center gap-4 px-4 sm:px-6 lg:px-8">
             {/* Mobile logo */}
-            <div className="flex items-center gap-2 lg:hidden">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-lg text-white font-bold">
-                FN
-              </div>
-
-              <span className="font-semibold">
+            <div className="flex items-center lg:hidden">
+              <span className="font-bold text-white">
                 Focus<span className="text-orange-500">Note</span>
               </span>
             </div>
@@ -369,16 +567,18 @@ const Dashboard = () => {
 
             {/* Profile */}
             <div
-              className="relative ml-auto"
+              className="relative ml-auto flex items-center gap-3"
               onMouseEnter={() => setShowProfile(true)}
               onMouseLeave={() => setShowProfile(false)}
             >
+              
+
               <button
                 type="button"
                 onClick={() => setShowProfile((current) => !current)}
                 aria-expanded={showProfile}
                 aria-haspopup="menu"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 font-semibold text-black transition hover:scale-105"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 font-semibold text-white transition hover:scale-105"
               >
                 {user?.full_name?.charAt(0)?.toUpperCase() || "U"}
               </button>
@@ -386,7 +586,7 @@ const Dashboard = () => {
               {showProfile && (
                 <div className="absolute right-0 top-11 z-50 w-56 rounded-2xl border border-white/10 bg-[#171d25] p-2 shadow-2xl">
                   <div className="border-b border-white/10 px-3 py-3">
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium text-white">
                       {user?.full_name || "User"}
                     </p>
 
@@ -439,7 +639,7 @@ const Dashboard = () => {
 
             {folders.map((folder) => (
               <button
-                key={folder.name}
+                key={folder.id}
                 onClick={() => setSelectedFolder(folder.name)}
                 className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
                   selectedFolder === folder.name
@@ -459,157 +659,246 @@ const Dashboard = () => {
             </button>
           </div>
 
-          {/*  FOLDER CREATION */}
+          {/*  FOLDER CREATION MODAL */}
 
           {showFolderInput && (
-            <form
-              onSubmit={handleCreateFolder}
-              className="mb-6 flex max-w-md gap-2 rounded-2xl border border-white/10 bg-[#151b23] p-3"
-            >
-              <input
-                autoFocus
-                type="text"
-                value={newFolder}
-                onChange={(e) => setNewFolder(e.target.value)}
-                placeholder="Folder name"
-                className="min-w-0 flex-1 rounded-xl bg-[#0d1218] px-4 py-2 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-orange-500"
-              />
-
-              <button
-                type="submit"
-                className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-black"
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+              <div
+                className="w-full max-w-md rounded-2xl border border-white/10 bg-[#151b23] p-5 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
               >
-                Add
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  setNewFolder("");
-                  setShowFolderInput(false);
-                }}
-                className="rounded-xl px-3 py-2 text-sm text-gray-400 hover:bg-white/5"
-              >
-                Cancel
-              </button>
-            </form>
-          )}
-
-          {showNoteForm && (
-            <div className="mb-6 rounded-2xl border border-white/10 bg-[#151b23] p-5">
-              <div className="mb-5 flex items-center justify-between">
-                <div>
+                <div className="mb-4 flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-white">
-                    Create New Note
+                    Create New Category
                   </h3>
 
-                  <p className="mt-1 text-xs text-gray-500">
-                    Add a title and content for your note.
-                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNewFolder("");
+                      setShowFolderInput(false);
+                    }}
+                    className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    aria-label="Close create folder form"
+                  >
+                    ✕
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowNoteForm(false);
-                    setCreateNoteError("");
-                  }}
-                  className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
-                >
-                  ✕
-                </button>
+                <form onSubmit={handleCreateFolder} className="space-y-4">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={newFolder}
+                    onChange={(e) => setNewFolder(e.target.value)}
+                    placeholder="Category name"
+                    className="w-full rounded-xl bg-[#0d1218] px-4 py-3 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-orange-500"
+                  />
+
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewFolder("");
+                        setShowFolderInput(false);
+                      }}
+                      className="rounded-xl px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-medium text-black"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </form>
               </div>
+            </div>
+          )}
 
-              <form onSubmit={handleCreateNote} className="space-y-4">
-                <input
-                  type="text"
-                  name="title"
-                  value={newNote.title}
-                  onChange={handleNoteChange}
-                  placeholder="Note title"
-                  className="w-full rounded-xl border border-white/10 bg-[#0d1218] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-orange-500/60"
-                />
+          {/*  NOTE CREATION MODAL */}
 
-                <textarea
-                  name="content"
-                  value={newNote.content}
-                  onChange={handleNoteChange}
-                  placeholder="Write your note..."
-                  rows={6}
-                  className="w-full resize-none rounded-xl border border-white/10 bg-[#0d1218] px-4 py-3 text-sm leading-6 text-white outline-none placeholder:text-gray-600 focus:border-orange-500/60"
-                />
+          {showNoteForm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+              <div
+                className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#151b23] p-5 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mb-5 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      Create New Note
+                    </h3>
 
-                {createNoteError && (
-                  <p className="text-sm text-red-400">{createNoteError}</p>
-                )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Add a title and content for your note.
+                    </p>
+                  </div>
 
-                <div className="flex justify-end gap-3">
                   <button
                     type="button"
                     onClick={() => {
                       setShowNoteForm(false);
                       setCreateNoteError("");
                     }}
-                    className="rounded-xl px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    aria-label="Close create note form"
                   >
-                    Cancel
-                  </button>
-
-                  <button
-                    type="submit"
-                    disabled={creatingNote}
-                    className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-medium text-black transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {creatingNote ? "Creating..." : "Create Note"}
+                    ✕
                   </button>
                 </div>
-              </form>
+
+                <form onSubmit={handleCreateNote} className="space-y-4">
+                  <input
+                    type="text"
+                    name="title"
+                    value={newNote.title}
+                    onChange={handleNoteChange}
+                    placeholder="Note title"
+                    className="w-full rounded-xl border border-white/10 bg-[#0d1218] px-4 py-3 text-sm text-white outline-none placeholder:text-gray-600 focus:border-orange-500/60"
+                  />
+
+                  <RichTextEditor
+                    content={newNote.content}
+                    onChange={(content) =>
+                      setNewNote((current) => ({
+                        ...current,
+                        content,
+                      }))
+                    }
+                  />
+
+                  {createNoteError && (
+                    <p className="text-sm text-red-400">{createNoteError}</p>
+                  )}
+
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNoteForm(false);
+                        setCreateNoteError("");
+                      }}
+                      className="rounded-xl px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={creatingNote}
+                      className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-medium text-black transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {creatingNote ? "Creating..." : "Create Note"}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           )}
-          {editingNote && (
-            <form
-              onSubmit={handleUpdateNote}
-              className="mb-6 max-w-2xl rounded-2xl border border-white/10 bg-[#151b23] p-5"
-            >
-              <h3 className="mb-4 text-lg font-semibold">Edit Note</h3>
+          {editingFolder && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+              <div
+                className="w-full max-w-md rounded-2xl border border-white/10 bg-[#151b23] p-5 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-white">
+                    Edit Category
+                  </h3>
 
-              <input
-                type="text"
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                className="mb-3 w-full rounded-xl bg-[#0d1218] px-4 py-3 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-orange-500"
-                placeholder="Note title"
-              />
+                  <button
+                    type="button"
+                    onClick={closeEditFolderModal}
+                    className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    aria-label="Close edit folder form"
+                  >
+                    ✕
+                  </button>
+                </div>
 
-              <textarea
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                rows="6"
-                className="mb-4 w-full resize-none rounded-xl bg-[#0d1218] px-4 py-3 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-orange-500"
-                placeholder="Note content"
-              />
+                <form onSubmit={handleUpdateFolder} className="space-y-4">
+                  <input
+                    autoFocus
+                    type="text"
+                    value={editFolderName}
+                    onChange={(e) => setEditFolderName(e.target.value)}
+                    className="w-full rounded-xl bg-[#0d1218] px-4 py-3 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-orange-500"
+                  />
 
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-medium text-black"
-                >
-                  Save Changes
-                </button>
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={closeEditFolderModal}
+                      className="rounded-xl px-4 py-2.5 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    >
+                      Cancel
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingNote(null);
-                    setEditTitle("");
-                    setEditContent("");
-                  }}
-                  className="rounded-xl bg-white/5 px-5 py-2.5 text-sm text-gray-300 hover:bg-white/10"
-                >
-                  Cancel
-                </button>
+                    <button
+                      type="submit"
+                      className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-medium text-black"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </form>
               </div>
-            </form>
+            </div>
+          )}
+
+          {editingNote && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+              <div
+                className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#151b23] p-5 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="mb-5 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Edit Note</h3>
+
+                  <button
+                    type="button"
+                    onClick={closeEditNoteModal}
+                    className="rounded-lg px-3 py-2 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    aria-label="Close edit note form"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpdateNote} className="space-y-4">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full rounded-xl bg-[#0d1218] px-4 py-3 text-sm text-white outline-none ring-1 ring-white/10 focus:ring-orange-500"
+                    placeholder="Note title"
+                  />
+
+                  <RichTextEditor content={editContent} onChange={setEditContent} />
+
+                  <div className="flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={closeEditNoteModal}
+                      className="rounded-xl bg-white/5 px-5 py-2.5 text-sm text-gray-300 hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="submit"
+                      className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-medium text-black"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
 
           {/*  NOTES HEADER  */}
@@ -646,7 +935,16 @@ const Dashboard = () => {
               {filteredNotes.map((note) => (
                 <article
                   key={note.id}
-                  className="group min-h-45 cursor-pointer rounded-2xl border border-white/10 bg-[#171d25] p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#f5a623]/30 hover:bg-[#1b222c]"
+                  onClick={() => setSelectedNote(note)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedNote(note);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  className="group flex h-full min-h-45 cursor-pointer flex-col rounded-2xl border border-white/10 bg-[#171d25] p-5 transition duration-200 hover:-translate-y-0.5 hover:border-[#f5a623]/30 hover:bg-[#1b222c]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="line-clamp-2 text-base font-semibold text-white">
@@ -660,11 +958,12 @@ const Dashboard = () => {
                     )}
                   </div>
 
-                  <p className="mt-4 line-clamp-4 text-sm leading-6 text-gray-400">
-                    {note.content}
-                  </p>
+                  <div
+                    className="mt-4 line-clamp-4 flex-1 overflow-hidden text-sm leading-6 text-gray-400"
+                    dangerouslySetInnerHTML={{ __html: note.content }}
+                  />
 
-                  <div className="mt-6 flex items-center justify-between">
+                  <div className="mt-auto flex shrink-0 items-center justify-between pt-6">
                     <span className="text-xs text-gray-600">
                       {note.created_at
                         ? new Date(note.created_at).toLocaleDateString()
@@ -674,7 +973,10 @@ const Dashboard = () => {
                     <div className="flex gap-2 opacity-0 transition group-hover:opacity-100">
                       <button
                         type="button"
-                        onClick={() => handleEditNote(note)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleEditNote(note);
+                        }}
                         className="rounded-lg bg-white/5 px-2.5 py-1.5 text-xs text-gray-400 hover:bg-white/10 hover:text-white"
                         title="Edit note"
                       >
@@ -684,6 +986,7 @@ const Dashboard = () => {
                       <button
                         type="button"
                         onClick={(event) => {
+                          event.stopPropagation();
                           deleteTriggerRef.current = event.currentTarget;
                           setDeleteNoteTarget(note);
                         }}
@@ -700,11 +1003,7 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-white/10 bg-[#11161d] px-6 py-16 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-white/5 text-2xl">
-                ✎
-              </div>
-
-              <h3 className="mt-4 text-lg font-medium">No notes found</h3>
+              <h3 className="text-lg font-medium">No notes found</h3>
 
               <p className="mt-2 text-sm text-gray-500">
                 Try another search or create a new note.
@@ -712,6 +1011,113 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+
+        {deleteFolderTarget && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171d25] p-6 shadow-2xl"
+            >
+              {deleteFolderTarget.notes?.length > 0 ? (
+                <>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-white">
+                      Notes exist inside "{deleteFolderTarget.name}"
+                    </h3>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteFolderTarget(null);
+                        setDeleteFolderError("");
+                      }}
+                      className="rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <div className="mb-4">
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-gray-300">
+                      {deleteFolderTarget.notes.map((note) => (
+                        <li key={note.id}>{note.title}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <p className="text-sm leading-6 text-gray-400">
+                    Deleting this folder will also delete all notes inside it. Do you want to continue?
+                  </p>
+
+                  {deleteFolderError && (
+                    <p className="mt-3 text-sm text-red-400">{deleteFolderError}</p>
+                  )}
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteFolderTarget(null);
+                        setDeleteFolderError("");
+                      }}
+                      className="rounded-xl bg-white/5 px-5 py-2.5 text-sm text-gray-300 hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirmDeleteFolder}
+                      className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600"
+                    >
+                      Delete Folder
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-lg font-semibold text-white">
+                    Delete category?
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-gray-400">
+                    Are you sure you want to delete{" "}
+                    <span className="font-medium text-white">
+                      "{deleteFolderTarget.name}"
+                    </span>
+                    ?
+                  </p>
+
+                  {deleteFolderError && (
+                    <p className="mt-3 text-sm text-red-400">{deleteFolderError}</p>
+                  )}
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDeleteFolderTarget(null);
+                        setDeleteFolderError("");
+                      }}
+                      className="rounded-xl bg-white/5 px-5 py-2.5 text-sm text-gray-300 hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirmDeleteFolder}
+                      className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-600"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
         {deleteNoteTarget && (
           <div
@@ -764,6 +1170,57 @@ const Dashboard = () => {
                     : "Delete"}
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {selectedNote && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+            onClick={() => setSelectedNote(null)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setSelectedNote(null);
+              }
+            }}
+          >
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="note-details-title"
+              className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#171d25] p-6 shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <h3
+                    id="note-details-title"
+                    className="text-xl font-semibold text-white"
+                  >
+                    {selectedNote.title}
+                  </h3>
+
+                  {selectedNote.folder && (
+                    <span className="mt-2 inline-block rounded-full bg-[#f5a623]/10 px-2.5 py-1 text-[11px] font-medium text-orange-500">
+                      #{selectedNote.folder}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedNote(null)}
+                  className="shrink-0 rounded-lg px-2 py-1 text-sm text-gray-400 hover:bg-white/5 hover:text-white"
+                  aria-label="Close note"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div
+                className="text-sm leading-7 text-gray-300"
+                dangerouslySetInnerHTML={{ __html: selectedNote.content }}
+              />
             </div>
           </div>
         )}

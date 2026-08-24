@@ -34,7 +34,7 @@ const Login = () => {
     if (!formData.password) {
       newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password = "Password must be at least 8 characters";
+      newErrors.password = "Email or password is invalid";
     }
 
     return newErrors;
@@ -202,12 +202,13 @@ const Login = () => {
                       className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] pl-10 pr-4 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                     />
 
-                    {errors.email && (
-                      <p id="email-error" className="mt-2 text-xs text-red-400">
-                        {errors.email}
-                      </p>
-                    )}
                   </div>
+
+                  {errors.email && (
+                    <p id="email-error" className="mt-2 text-xs text-red-400">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
 
                 {/* Password */}
@@ -236,7 +237,7 @@ const Login = () => {
 
                     <input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       name="password"
                       placeholder="Enter your password"
                       value={formData.password}
@@ -246,17 +247,8 @@ const Login = () => {
                       aria-describedby={
                         errors.password ? "password-error" : undefined
                       }
-                      className="..."
+                      className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] pl-10 pr-12 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                     />
-
-                    {errors.password && (
-                      <p
-                        id="password-error"
-                        className="mt-2 text-xs text-red-400"
-                      >
-                        {errors.password}
-                      </p>
-                    )}
 
                     <button
                       type="button"
@@ -296,20 +288,20 @@ const Login = () => {
                     </button>
                   </div>
 
-                  <div className="mt-2 text-right">
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-orange-400 transition hover:text-orange-300"
+                  {errors.password && (
+                    <p
+                      id="password-error"
+                      className="mt-2 text-xs text-red-400"
                     >
-                      Forgot password?
-                    </button>
-                  </div>
+                      {errors.password}
+                    </p>
+                  )}
                 </div>
 
                 {/* Login button */}
                 <button
                   type="submit"
-                  className="h-11 w-full rounded-lg bg-orange-500 text-sm font-semibold text-black shadow-lg shadow-orange-500/10 transition hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 active:scale-[0.99]"
+                  className="mt-8 h-11 w-full rounded-lg bg-orange-500 text-sm font-semibold text-black shadow-lg shadow-orange-500/10 transition hover:bg-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30 active:scale-[0.99]"
                 >
                   Log In
                 </button>
