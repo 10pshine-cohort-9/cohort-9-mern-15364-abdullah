@@ -16,10 +16,22 @@ const Login = () => {
   const [errors, setErrors] = useState({});
 
   function handleChange(e) {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    setErrors((currentErrors) => {
+      if (!currentErrors[name]) return currentErrors;
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[name];
+      return nextErrors;
+    });
+
+    setError("");
   }
 
   function validateForm() {
@@ -51,16 +63,15 @@ const Login = () => {
     }
 
     setErrors({});
-
     setError("");
 
     try {
       await login(formData);
       navigate("/dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Login failed. Please try again.",
-      );
+      setErrors({
+        password: err.response?.data?.message || "Email or password is invalid",
+      });
     }
   }
 
@@ -155,13 +166,6 @@ const Login = () => {
                 </p>
               </div>
 
-              {/* Error */}
-              {error && (
-                <div className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Email */}
                 <div>
@@ -194,14 +198,12 @@ const Login = () => {
                       placeholder="Enter your email"
                       value={formData.email}
                       onChange={handleChange}
-                      required
                       aria-invalid={Boolean(errors.email)}
                       aria-describedby={
                         errors.email ? "email-error" : undefined
                       }
                       className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] pl-10 pr-4 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                     />
-
                   </div>
 
                   {errors.email && (
@@ -242,7 +244,6 @@ const Login = () => {
                       placeholder="Enter your password"
                       value={formData.password}
                       onChange={handleChange}
-                      required
                       aria-invalid={Boolean(errors.password)}
                       aria-describedby={
                         errors.password ? "password-error" : undefined
