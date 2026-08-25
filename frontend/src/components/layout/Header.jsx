@@ -32,16 +32,12 @@ const Header = ({
         </div>
 
         {/* Profile */}
-        <div
-          className="relative ml-auto flex items-center gap-3"
-          onMouseEnter={() => setShowProfile(true)}
-          onMouseLeave={() => setShowProfile(false)}
-        >
+        <div className="relative ml-auto flex items-center gap-3">
           <button
             type="button"
             onClick={() => setShowProfile((current) => !current)}
             aria-expanded={showProfile}
-            aria-haspopup="menu"
+            aria-haspopup="true"
             className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 font-semibold text-white transition hover:scale-105"
           >
             {user?.full_name?.charAt(0)?.toUpperCase() || "U"}

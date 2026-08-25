@@ -69,9 +69,9 @@ const Login = () => {
       await login(formData);
       navigate("/dashboard");
     } catch (err) {
-      setErrors({
-        password: err.response?.data?.message || "Email or password is invalid",
-      });
+      setError(
+        err.response?.data?.message || "Email or password is invalid",
+      );
     }
   }
 
@@ -206,11 +206,6 @@ const Login = () => {
                     />
                   </div>
 
-                  {errors.email && (
-                    <p id="email-error" className="mt-2 text-xs text-red-400">
-                      {errors.email}
-                    </p>
-                  )}
                 </div>
 
                 {/* Password */}
@@ -289,13 +284,23 @@ const Login = () => {
                     </button>
                   </div>
 
+                  {errors.email && (
+                    <p id="email-error" className="mt-4 text-xs text-red-400">
+                      {errors.email}
+                    </p>
+                  )}
+
                   {errors.password && (
                     <p
                       id="password-error"
-                      className="mt-2 text-xs text-red-400"
+                      className="mt-4 text-xs text-red-400"
                     >
                       {errors.password}
                     </p>
+                  )}
+
+                  {error && (
+                    <p className="mt-4 text-xs text-red-400">{error}</p>
                   )}
                 </div>
 

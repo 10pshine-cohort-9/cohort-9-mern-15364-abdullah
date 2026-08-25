@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createFolder,
   updateFolder,
@@ -42,14 +42,27 @@ function getStoredFolders(userId) {
 
 export const useFolders = (userId) => {
   const [folders, setFolders] = useState(() => getStoredFolders(userId));
+  const loadedUserIdRef = useRef(userId);
+  const pendingUserIdRef = useRef(null);
 
   useEffect(() => {
-    if (userId) {
-      localStorage.setItem(
-        getFoldersStorageKey(userId),
-        JSON.stringify(folders),
-      );
+    if (loadedUserIdRef.current === userId) return;
+
+    loadedUserIdRef.current = userId;
+    pendingUserIdRef.current = userId;
+    setFolders(getStoredFolders(userId));
+  }, [userId]);
+
+  useEffect(() => {
+    if (!userId || pendingUserIdRef.current === userId) {
+      pendingUserIdRef.current = null;
+      return;
     }
+
+    localStorage.setItem(
+      getFoldersStorageKey(userId),
+      JSON.stringify(folders),
+    );
   }, [folders, userId]);
 
   return {

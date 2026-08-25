@@ -1,3 +1,5 @@
+import sanitizeHtml from "../../utils/sanitizeHtml.js";
+
 const NoteDetailsModal = ({ selectedNote, onClose }) => {
   if (!selectedNote) return null;
 
@@ -46,7 +48,9 @@ const NoteDetailsModal = ({ selectedNote, onClose }) => {
 
         <div
           className="text-sm leading-7 text-gray-300"
-          dangerouslySetInnerHTML={{ __html: selectedNote.content }}
+          dangerouslySetInnerHTML={{
+            __html: sanitizeHtml(selectedNote.content),
+          }}
         />
       </div>
     </div>

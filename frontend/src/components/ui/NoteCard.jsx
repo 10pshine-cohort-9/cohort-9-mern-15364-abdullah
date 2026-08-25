@@ -1,3 +1,5 @@
+import sanitizeHtml from "../../utils/sanitizeHtml.js";
+
 const NoteCard = ({
   note,
   setSelectedNote,
@@ -34,7 +36,7 @@ const NoteCard = ({
 
       <div
         className="mt-4 line-clamp-4 flex-1 overflow-hidden text-sm leading-6 text-gray-400"
-        dangerouslySetInnerHTML={{ __html: note.content }}
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }}
       />
 
       <div className="mt-auto flex shrink-0 items-center justify-between pt-6">
@@ -44,7 +46,7 @@ const NoteCard = ({
             : ""}
         </span>
 
-        <div className="flex gap-2 opacity-0 transition group-hover:opacity-100">
+        <div className="flex gap-2 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
           <button
             type="button"
             onClick={(event) => {
