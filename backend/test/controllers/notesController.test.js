@@ -16,11 +16,12 @@ describe("notesController", () => {
 
   describe("createNote", () => {
     it("should return 201 with the created note on success", async () => {
+        const createUserNoteStub = sinon.stub().resolves({ id: 1, title: "Test" });
       const { createNote } = await esmock(
         "../../src/controllers/notesController.js",
         {
           "../../src/services/notesService.js": {
-            createUserNote: sinon.stub().resolves({ id: 1, title: "Test" }),
+            createUserNote: createUserNoteStub,
           },
         },
       );
@@ -33,6 +34,7 @@ describe("notesController", () => {
       await createNote(req, res);
 
       expect(res.status.calledWith(201)).to.be.true;
+      expect(createUserNoteStub.calledWith("Test", "Body", 5, 1)).to.be.true;
     });
 
     it("should return 400 if title/content are missing", async () => {
@@ -58,11 +60,12 @@ describe("notesController", () => {
 
   describe("getAllNotes", () => {
     it("should return 200 with the users notes", async () => {
+        const getUserNotesStub = sinon.stub().resolves([{ id: 1 }, { id: 2 }]);
       const { getAllNotes } = await esmock(
         "../../src/controllers/notesController.js",
         {
           "../../src/services/notesService.js": {
-            getUserNotes: sinon.stub().resolves([{ id: 1 }, { id: 2 }]),
+            getUserNotes: getUserNotesStub,
           },
         },
       );
@@ -73,16 +76,18 @@ describe("notesController", () => {
 
       expect(res.status.calledWith(200)).to.be.true;
       expect(res.json.firstCall.args[0].data).to.have.lengthOf(2);
+       expect(getUserNotesStub.calledWith(5)).to.be.true; 
     });
   });
 
   describe("getSingleNote", () => {
     it("should return 200 with the note on success", async () => {
+         const getUserNoteByIdStub = sinon.stub().resolves({ id: 1, title: "Test" });
       const { getSingleNote } = await esmock(
         "../../src/controllers/notesController.js",
         {
           "../../src/services/notesService.js": {
-            getUserNoteById: sinon.stub().resolves({ id: 1, title: "Test" }),
+            getUserNoteById: getUserNoteByIdStub,
           },
         },
       );
@@ -92,6 +97,7 @@ describe("notesController", () => {
       await getSingleNote(req, res);
 
       expect(res.status.calledWith(200)).to.be.true;
+       expect(getUserNoteByIdStub.calledWith("1", 5)).to.be.true;
     });
 
     it("should return 404 if the note is not found", async () => {
@@ -116,11 +122,12 @@ describe("notesController", () => {
 
   describe("updateNote", () => {
     it("should return 200 with the updated note on success", async () => {
+         const updateUserNoteStub = sinon.stub().resolves({ id: 1, title: "Updated" });
       const { updateNote } = await esmock(
         "../../src/controllers/notesController.js",
         {
           "../../src/services/notesService.js": {
-            updateUserNote: sinon.stub().resolves({ id: 1, title: "Updated" }),
+            updateUserNote: updateUserNoteStub,
           },
         },
       );
@@ -134,16 +141,18 @@ describe("notesController", () => {
       await updateNote(req, res);
 
       expect(res.status.calledWith(200)).to.be.true;
+      expect(updateUserNoteStub.calledWith("1", "Updated", "Body", 5, 1)).to.be.true;
     });
   });
 
   describe("deleteNote", () => {
     it("should return 200 on successful deletion", async () => {
+        const deleteUserNoteStub = sinon.stub().resolves({ id: 1 });
       const { deleteNote } = await esmock(
         "../../src/controllers/notesController.js",
         {
           "../../src/services/notesService.js": {
-            deleteUserNote: sinon.stub().resolves({ id: 1 }),
+            deleteUserNote: deleteUserNoteStub,
           },
         },
       );
@@ -153,6 +162,7 @@ describe("notesController", () => {
       await deleteNote(req, res);
 
       expect(res.status.calledWith(200)).to.be.true;
+      expect(deleteUserNoteStub.calledWith("1", 5)).to.be.true;
     });
 
     it("should return 404 if the note is not found", async () => {

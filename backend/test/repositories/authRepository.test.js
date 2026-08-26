@@ -36,6 +36,7 @@ describe("authRepository", () => {
         await findUserByEmail("test@test.com");
         throw new Error("Expected findUserByEmail to throw, but it did not");
       } catch (err) {
+        expect(err).to.equal(dbError);
         expect(err.message).to.equal("connection refused");
       }
     });
@@ -111,6 +112,7 @@ describe("authRepository", () => {
         await createUser("Test User", "test@test.com", "hashedPassword123");
         throw new Error("Expected createUser to throw, but it did not");
       } catch (err) {
+        expect(err).to.equal(dbError);
         expect(err.message).to.equal(
           "duplicate key value violates unique constraint",
         );

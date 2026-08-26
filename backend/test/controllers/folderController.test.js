@@ -16,17 +16,19 @@ describe("folderController", () => {
 
   describe("createFolder", () => {
     it("should return 201 with the created folder on success", async () => {
+         const createUserFolderStub = sinon.stub().resolves({ id: 1, name: "Work" });
       const { createFolder } = await esmock("../../src/controllers/folderController.js", {
         "../../src/services/folderService.js": {
-          createUserFolder: sinon.stub().resolves({ id: 1, name: "Work" }),
+          createUserFolder: createUserFolderStub,
         },
       });
-      const req = { body: { name: "Work" }, user: { id: 5 } };
+      const req = { body: { name: "  Work  " }, user: { id: 5 } };
       const res = createRes();
 
       await createFolder(req, res);
 
       expect(res.status.calledWith(201)).to.be.true;
+      expect(createUserFolderStub.calledWith("Work", 5)).to.be.true;
     });
 
   });
@@ -46,9 +48,10 @@ describe("folderController", () => {
     });
 
     it("should return 200 with the updated folder on success", async () => {
+          const updateUserFolderStub = sinon.stub().resolves({ id: 1, name: "Renamed" });
       const { updateFolder } = await esmock("../../src/controllers/folderController.js", {
         "../../src/services/folderService.js": {
-          updateUserFolder: sinon.stub().resolves({ id: 1, name: "Renamed" }),
+          updateUserFolder: updateUserFolderStub,
         },
       });
       const req = { body: { name: "Renamed" }, params: { id: "1" }, user: { id: 5 } };
@@ -57,14 +60,16 @@ describe("folderController", () => {
       await updateFolder(req, res);
 
       expect(res.status.calledWith(200)).to.be.true;
+       expect(updateUserFolderStub.calledWith(1, "Renamed", 5)).to.be.true; 
     });
   });
 
   describe("deleteFolder", () => {
     it("should return 200 on successful deletion", async () => {
+        const deleteUserFolderStub = sinon.stub().resolves({ id: 1 });
       const { deleteFolder } = await esmock("../../src/controllers/folderController.js", {
         "../../src/services/folderService.js": {
-          deleteUserFolder: sinon.stub().resolves({ id: 1 }),
+          deleteUserFolder: deleteUserFolderStub,
         },
       });
       const req = { params: { id: "1" }, user: { id: 5 } };
@@ -73,6 +78,7 @@ describe("folderController", () => {
       await deleteFolder(req, res);
 
       expect(res.status.calledWith(200)).to.be.true;
+      expect(deleteUserFolderStub.calledWith(1, 5)).to.be.true;
     });
 
     it("should return 409 when the service rejects due to notes in the folder", async () => {
