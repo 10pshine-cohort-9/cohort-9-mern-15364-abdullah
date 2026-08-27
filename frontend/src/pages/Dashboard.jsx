@@ -13,6 +13,7 @@ import NoteDetailsModal from "../components/modals/NoteDetailsModal.jsx";
 import Sidebar from "../components/layout/Sidebar.jsx";
 import Header from "../components/layout/Header.jsx";
 import NotesGrid from "../components/ui/NotesGrid.jsx";
+import ProfileModal from "../components/modals/ProfileModal.jsx";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ const Dashboard = () => {
   const [selectedFolder, setSelectedFolder] = useState("All Notes");
   const [search, setSearch] = useState("");
   const [showProfile, setShowProfile] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showFolderInput, setShowFolderInput] = useState(false);
   const [newFolder, setNewFolder] = useState("");
 
@@ -79,6 +81,11 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     navigate("/login");
+  };
+
+  const handleOpenProfile = () => {
+    setShowProfile(false);
+    setShowProfileModal(true);
   };
 
   const handleNoteChange = (e) => {
@@ -392,6 +399,7 @@ const Dashboard = () => {
           setShowProfile={setShowProfile}
           user={user}
           handleLogout={handleLogout}
+          handleOpenProfile={handleOpenProfile}
         />
 
         {/*  PAGE CONTENT */}
@@ -547,6 +555,13 @@ const Dashboard = () => {
           <NoteDetailsModal
             selectedNote={selectedNote}
             onClose={() => setSelectedNote(null)}
+          />
+        )}
+
+        {showProfileModal && (
+          <ProfileModal
+            user={user}
+            onClose={() => setShowProfileModal(false)}
           />
         )}
         {notesError && (

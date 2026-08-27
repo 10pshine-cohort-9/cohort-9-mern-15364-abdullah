@@ -5,6 +5,7 @@ const Header = ({
   setShowProfile,
   user,
   handleLogout,
+  handleOpenProfile,
 }) => {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0b0f14]/95 backdrop-blur m-auto ">
@@ -55,7 +56,11 @@ const Header = ({
                 </p>
               </div>
 
-              <button className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/5">
+              <button
+                type="button"
+                onClick={handleOpenProfile}
+                className="mt-1 w-full rounded-xl px-3 py-2 text-left text-sm text-gray-300 hover:bg-white/5"
+              >
                 Profile
               </button>
 

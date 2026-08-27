@@ -12,22 +12,36 @@ const Register = () => {
     password: "",
   });
 
-  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
   function handleChange(e) {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
+
+    setErrors((currentErrors) => {
+      if (!currentErrors[name]) return currentErrors;
+
+      const nextErrors = { ...currentErrors };
+      delete nextErrors[name];
+      return nextErrors;
+    });
+
   }
 
   function validateForm() {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) {
+    const fullName = formData.fullName.trim();
+
+    if (!fullName) {
       newErrors.fullName = "Full name is required";
+    } else if (!/^[A-Za-z]+(?: [A-Za-z]+)*$/.test(fullName)) {
+      newErrors.fullName = "Full name can contain alphabets and spaces only";
     }
 
     if (!formData.email.trim()) {
@@ -56,15 +70,16 @@ const Register = () => {
     }
 
     setErrors({});
-    setError("");
 
     try {
       await register(formData);
       navigate("/login");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Registration failed. Please try again.",
-      );
+      setErrors({
+        email:
+          err.response?.data?.message ||
+          "Registration failed. Please try again.",
+      });
     }
   }
 
@@ -95,13 +110,6 @@ const Register = () => {
                 </p>
               </div>
 
-              {/* Error */}
-              {error && (
-                <div className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-                  {error}
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Name */}
                 <div>
@@ -120,10 +128,14 @@ const Register = () => {
                     value={formData.fullName}
                     onChange={handleChange}
                     required
+                    aria-invalid={Boolean(errors.fullName)}
+                    aria-describedby={
+                      errors.fullName ? "fullName-error" : undefined
+                    }
                     className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] px-4 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                   />
                   {errors.fullName && (
-                    <p className="mt-2 text-xs text-red-400">
+                    <p id="fullName-error" className="mt-2 text-xs text-red-400">
                       {errors.fullName}
                     </p>
                   )}
@@ -146,10 +158,14 @@ const Register = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? "email-error" : undefined}
                     className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] px-4 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                   />
                   {errors.email && (
-                    <p className="mt-2 text-xs text-red-400">{errors.email}</p>
+                    <p id="email-error" className="mt-2 text-xs text-red-400">
+                      {errors.email}
+                    </p>
                   )}
                 </div>
 
@@ -171,6 +187,10 @@ const Register = () => {
                       value={formData.password}
                       onChange={handleChange}
                       required
+                      aria-invalid={Boolean(errors.password)}
+                      aria-describedby={
+                        errors.password ? "password-error" : undefined
+                      }
                       className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] px-4 pr-11 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                     />
 
@@ -212,7 +232,7 @@ const Register = () => {
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="mt-2 text-xs text-red-400">
+                    <p id="password-error" className="mt-2 text-xs text-red-400">
                       {errors.password}
                     </p>
                   )}

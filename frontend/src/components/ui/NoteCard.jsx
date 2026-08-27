@@ -35,7 +35,7 @@ const NoteCard = ({
       </div>
 
       <div
-        className="mt-4 line-clamp-4 flex-1 overflow-hidden text-sm leading-6 text-gray-400"
+        className="mt-4 line-clamp-4 flex-1 overflow-hidden text-sm leading-6 text-gray-400 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
         dangerouslySetInnerHTML={{ __html: sanitizeHtml(note.content) }}
       />
 
