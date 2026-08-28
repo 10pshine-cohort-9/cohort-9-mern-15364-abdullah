@@ -1,11 +1,13 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useFolders } from "./useFolders.js";
 
 jest.mock("../api/foldersApi.js", () => ({
+  getFolders: jest.fn(),
   createFolder: jest.fn(),
   updateFolder: jest.fn(),
   deleteFolder: jest.fn(),
 }));
+
 
 describe("useFolders", () => {
   beforeEach(() => {
@@ -88,5 +90,25 @@ describe("useFolders", () => {
 
     const stored = JSON.parse(localStorage.getItem("focusnote-folders-5"));
     expect(stored).toEqual([{ id: 1, name: "New Folder" }]);
+  });
+
+  it("should fetch the user's folders from the server", async () => {
+    const { getFolders } = jest.requireMock("../api/foldersApi.js");
+    localStorage.setItem("token", "test-token");
+    getFolders.mockResolvedValue({
+      data: [
+        { id: "7", name: "Server Folder" },
+        { id: "invalid", name: "Ignored Folder" },
+      ],
+    });
+
+    const { result } = renderHook(() => useFolders(5));
+
+    await waitFor(() => {
+      expect(result.current.folders).toEqual([
+        { id: 7, name: "Server Folder" },
+      ]);
+    });
+    expect(getFolders).toHaveBeenCalledWith("test-token");
   });
 });
