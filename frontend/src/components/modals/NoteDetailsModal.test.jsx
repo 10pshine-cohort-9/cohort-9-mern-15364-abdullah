@@ -35,7 +35,19 @@ describe("NoteDetailsModal", () => {
     });
     expect(screen.getByText("My Note")).toBeInTheDocument();
     expect(screen.getByText("Hello")).toBeInTheDocument();
+  });
+
+  it("should strip a <script> tag from the content", () => {
+    renderModal({
+      selectedNote: {
+        id: 1,
+        title: "T",
+        content: "<p>Safe</p><script>alert(1)</script>",
+        folder: null,
+      },
+    });
     expect(document.querySelector("script")).not.toBeInTheDocument();
+    expect(screen.getByText("Safe")).toBeInTheDocument();
   });
 
   it("should show the folder badge when the note has a folder", () => {

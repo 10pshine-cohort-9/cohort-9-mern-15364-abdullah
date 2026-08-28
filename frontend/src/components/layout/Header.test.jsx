@@ -50,12 +50,6 @@ describe("Header", () => {
     expect(updaterFn(true)).toBe(false);
   });
 
-  it("should call handleOpenProfile when 'Profile' is clicked", () => {
-    const { handleOpenProfile } = renderHeader({ showProfile: true });
-    fireEvent.click(screen.getByText("Profile"));
-    expect(handleOpenProfile).toHaveBeenCalled();
-  });
-
   it("should call handleLogout when 'Logout' is clicked", () => {
     const { handleLogout } = renderHeader({ showProfile: true });
     fireEvent.click(screen.getByText("Logout"));

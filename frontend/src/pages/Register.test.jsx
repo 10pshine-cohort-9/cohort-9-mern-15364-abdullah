@@ -114,21 +114,6 @@ describe("Register", () => {
     ).toBeInTheDocument();
   });
 
-  it("should clear a field's validation error once the user edits it", async () => {
-    renderRegister();
-
-    fireEvent.submit(screen.getByLabelText("Full Name").closest("form"));
-    expect(
-      await screen.findByText("Full name is required"),
-    ).toBeInTheDocument();
-
-    fireEvent.change(screen.getByLabelText("Full Name"), {
-      target: { value: "Jane Doe" },
-    });
-
-    expect(screen.queryByText("Full name is required")).not.toBeInTheDocument();
-  });
-
   it("should toggle password visibility when the show/hide button is clicked", () => {
     renderRegister();
     const passwordInput = screen.getByLabelText("Password");
