@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
+  getFolders,
   createFolder,
   updateFolder,
   deleteFolder,
@@ -64,6 +65,36 @@ export const useFolders = (userId) => {
       JSON.stringify(folders),
     );
   }, [folders, userId]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    async function fetchFolders() {
+      const token = localStorage.getItem("token");
+
+      if (!token) return;
+
+      try {
+        const response = await getFolders(token);
+        const fetchedFolders = Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        setFolders(
+          fetchedFolders
+            .map((folder) => ({ id: Number(folder.id), name: folder.name }))
+            .filter(
+              (folder) =>
+                Number.isSafeInteger(folder.id) && Boolean(folder.name),
+            ),
+        );
+      } catch {
+        // Keep the user-scoped cached folders when the server is unavailable.
+      }
+    }
+
+    fetchFolders();
+  }, [userId]);
 
   return {
     folders,
