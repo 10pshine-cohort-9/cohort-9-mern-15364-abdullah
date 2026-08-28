@@ -18,7 +18,7 @@ const Header = ({
         </div>
 
         {/* Search */}
-        <div className="relative left-10 mx-auto w-full max-w-2xl lg:mx-0">
+        <div className="relative left-10 hidden mx-auto w-full max-w-2xl lg:block lg:mx-0">
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
             ⌕
           </span>
