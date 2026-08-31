@@ -418,6 +418,7 @@ const Dashboard = () => {
 
           <div className="mb-7 flex gap-2 overflow-x-auto pb-1 lg:hidden">
             <button
+            type="button"
               onClick={() => setSelectedFolder("All Notes")}
               className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
                 selectedFolder === "All Notes"
@@ -430,6 +431,7 @@ const Dashboard = () => {
 
             {folders.map((folder) => (
               <button
+              type="button"
                 key={folder.id}
                 onClick={() => setSelectedFolder(folder.name)}
                 className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
@@ -443,6 +445,7 @@ const Dashboard = () => {
             ))}
 
             <button
+            type="button"
               onClick={() => setShowFolderInput(true)}
               className="shrink-0 rounded-full bg-[#1b212a] px-4 py-2 text-lg text-orange-500 hover:bg-white/10"
             >
@@ -506,6 +509,7 @@ const Dashboard = () => {
             </div>
 
             <button
+            type="button"
               onClick={() => {
                 setCreateNoteError("");
                 setShowNoteForm(true);

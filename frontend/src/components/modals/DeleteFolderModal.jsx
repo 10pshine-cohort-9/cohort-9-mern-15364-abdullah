@@ -63,7 +63,7 @@ const DeleteFolderModal = ({
               Are you sure you want to delete{" "}
               <span className="font-medium text-white">
                 "{deleteFolderTarget.name}"
-              </span>
+              </span>{" "}
               ?
             </p>
 
