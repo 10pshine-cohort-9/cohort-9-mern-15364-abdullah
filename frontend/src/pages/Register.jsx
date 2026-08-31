@@ -30,7 +30,6 @@ const Register = () => {
       delete nextErrors[name];
       return nextErrors;
     });
-
   }
 
   function validateForm() {
@@ -72,12 +71,12 @@ const Register = () => {
     setErrors({});
 
     try {
-      await register(formData);
+      await register({ ...formData, fullName: formData.fullName.trim() });
       navigate("/login");
     } catch (err) {
       setErrors({
         email:
-          err.response?.data?.message ||
+          err?.response?.data?.message ||
           "Registration failed. Please try again.",
       });
     }
@@ -135,7 +134,10 @@ const Register = () => {
                     className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] px-4 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                   />
                   {errors.fullName && (
-                    <p id="fullName-error" className="mt-2 text-xs text-red-400">
+                    <p
+                      id="fullName-error"
+                      className="mt-2 text-xs text-red-400"
+                    >
                       {errors.fullName}
                     </p>
                   )}
@@ -232,7 +234,10 @@ const Register = () => {
                     </button>
                   </div>
                   {errors.password && (
-                    <p id="password-error" className="mt-2 text-xs text-red-400">
+                    <p
+                      id="password-error"
+                      className="mt-2 text-xs text-red-400"
+                    >
                       {errors.password}
                     </p>
                   )}

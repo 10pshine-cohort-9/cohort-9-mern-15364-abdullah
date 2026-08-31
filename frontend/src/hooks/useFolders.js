@@ -76,8 +76,8 @@ export const useFolders = (userId) => {
 
       try {
         const response = await getFolders(token);
-        const fetchedFolders = Array.isArray(response.data)
-          ? response.data
+        const fetchedFolders = Array.isArray(response)
+          ? response
           : [];
 
         setFolders(

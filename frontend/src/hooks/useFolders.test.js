@@ -8,7 +8,6 @@ jest.mock("../api/foldersApi.js", () => ({
   deleteFolder: jest.fn(),
 }));
 
-
 describe("useFolders", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -95,12 +94,10 @@ describe("useFolders", () => {
   it("should fetch the user's folders from the server", async () => {
     const { getFolders } = jest.requireMock("../api/foldersApi.js");
     localStorage.setItem("token", "test-token");
-    getFolders.mockResolvedValue({
-      data: [
-        { id: "7", name: "Server Folder" },
-        { id: "invalid", name: "Ignored Folder" },
-      ],
-    });
+    getFolders.mockResolvedValue([
+      { id: "7", name: "Server Folder" },
+      { id: "invalid", name: "Ignored Folder" },
+    ]);
 
     const { result } = renderHook(() => useFolders(5));
 
