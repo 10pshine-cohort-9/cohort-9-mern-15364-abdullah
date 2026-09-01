@@ -26,3 +26,7 @@ coverage/
 
 # Misc
 *.local
+
+#sonarqube
+echo ".scannerwork/" >> .gitignore
+.scannerwork/

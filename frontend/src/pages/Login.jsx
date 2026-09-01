@@ -39,7 +39,7 @@ const Login = () => {
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    } else if (!formData.email.includes("@") || !formData.email.includes(".")) {
       newErrors.email = "Please provide a valid email";
     }
 
@@ -69,9 +69,7 @@ const Login = () => {
       await login(formData);
       navigate("/dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Email or password is invalid",
-      );
+      setError(err.response?.data?.message || "Email or password is invalid");
     }
   }
 
@@ -205,7 +203,6 @@ const Login = () => {
                       className="h-11 w-full rounded-lg border border-white/8 bg-[#101419] pl-10 pr-4 text-sm text-gray-200 outline-none transition placeholder:text-gray-600 focus:border-orange-500/70 focus:ring-2 focus:ring-orange-500/10"
                     />
                   </div>
-
                 </div>
 
                 {/* Password */}

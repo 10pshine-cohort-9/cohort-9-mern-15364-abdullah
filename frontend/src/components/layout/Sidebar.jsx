@@ -21,6 +21,7 @@ const Sidebar = ({
       <div className="flex-1 overflow-y-auto px-4 py-6">
         {/* All Notes */}
         <button
+          type="button"
           onClick={() => setSelectedFolder("All Notes")}
           className={`mb-6 flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition ${
             selectedFolder === "All Notes"
@@ -29,8 +30,7 @@ const Sidebar = ({
           }`}
         >
           <span className="flex items-center gap-3">
-            <span>▤</span>
-            All Notes
+            <span className="mr-1">▤</span> All Notes
           </span>
         </button>
 
@@ -41,6 +41,7 @@ const Sidebar = ({
           </p>
 
           <button
+            type="button"
             onClick={() => setShowFolderInput(true)}
             className="text-lg text-gray-500 transition hover:text-orange-500"
             title="Create category"
@@ -62,6 +63,7 @@ const Sidebar = ({
               >
                 {/* Folder name */}
                 <button
+                  type="button"
                   onClick={() => setSelectedFolder(folder.name)}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
@@ -85,7 +87,8 @@ const Sidebar = ({
                       onClick={(event) => {
                         event.stopPropagation();
                         const notesInFolder = notes.filter(
-                          (note) => Number(note.folder_id) === Number(folder.id),
+                          (note) =>
+                            Number(note.folder_id) === Number(folder.id),
                         );
 
                         if (notesInFolder.length > 0) {
