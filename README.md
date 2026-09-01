@@ -38,7 +38,7 @@ This project is a comprehensive PERN-style full-stack application that demonstra
 
 ## Project Structure
 
-```
+```text
 .
 ├── frontend/                          # React frontend application
 │   ├── src/
@@ -108,7 +108,7 @@ This project is a comprehensive PERN-style full-stack application that demonstra
 
 ### Prerequisites
 
-- **Node.js** (v14 or higher)
+- **Node.js** (v18 or higher)
 - **npm** or **yarn**
 - **PostgreSQL** (v12 or higher)
 - **pgAdmin 4** (optional, for database management)
