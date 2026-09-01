@@ -10,14 +10,8 @@ const DeleteNoteModal = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          onClose();
-        }
-      }}
     >
       <div
-        role="dialog"
         aria-modal="true"
         aria-labelledby="delete-note-title"
         className="w-full max-w-md rounded-2xl border border-white/10 bg-[#171d25] p-6 shadow-2xl"
