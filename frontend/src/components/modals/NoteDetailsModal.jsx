@@ -47,7 +47,7 @@ const NoteDetailsModal = ({ selectedNote, onClose }) => {
         </div>
 
         <div
-          className="text-sm leading-7 text-gray-300"
+          className="text-sm leading-7 text-gray-300 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-6 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:my-1"
           dangerouslySetInnerHTML={{
             __html: sanitizeHtml(selectedNote.content),
           }}
