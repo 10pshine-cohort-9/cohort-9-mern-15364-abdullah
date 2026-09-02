@@ -103,7 +103,7 @@ const Sidebar = ({
 
                 {/* Count / Actions */}
                 <div className="flex items-center gap-1">
-                  <div className="hidden items-center gap-1 group-hover:flex group-focus-within:flex">
+                  <div className="flex items-center gap-1 lg:hidden lg:group-hover:flex lg:group-focus-within:flex">
                     <button
                       type="button"
                       onClick={() => handleEditFolder(folder)}

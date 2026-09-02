@@ -151,8 +151,8 @@ describe("Dashboard", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Open categories" }));
 
-    expect(screen.getByTitle("Edit folder")).toBeInTheDocument();
-    expect(screen.getByTitle("Delete folder")).toBeInTheDocument();
+    expect(screen.getByTitle("Edit folder")).toBeVisible();
+    expect(screen.getByTitle("Delete folder")).toBeVisible();
     expect(
       screen.getByRole("button", { name: "Create category" }),
     ).toBeInTheDocument();
@@ -322,6 +322,8 @@ describe("Dashboard", () => {
 
     renderDashboard();
 
+    const sidebar = document.querySelector("aside");
+    fireEvent.click(within(sidebar).getByText("Work"));
     fireEvent.click(screen.getByTitle("Edit folder"));
     fireEvent.change(screen.getByDisplayValue("Work"), {
       target: { value: "Renamed" },
@@ -331,7 +333,10 @@ describe("Dashboard", () => {
     await waitFor(() => {
       expect(updateFolder).toHaveBeenCalledWith("fake-token", 1, "Renamed");
     });
-    expect(await screen.findByText("Renamed")).toBeInTheDocument();
+    expect(await within(sidebar).findByText("Renamed")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Renamed" }),
+    ).toBeInTheDocument();
   });
 
   it("should delete a note from its confirmation modal", async () => {

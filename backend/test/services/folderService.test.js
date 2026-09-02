@@ -12,18 +12,29 @@ describe("folderService", () => {
 
   describe("createUserFolder", () => {
     it("should return the created folder on success", async () => {
-      const { createUserFolder } = await esmock(
-        "../../src/services/folderService.js",
-        {
-          "../../src/repositories/folderRepository.js": {
-            createFolder: sinon
-              .stub()
-              .resolves({ id: 1, name: "Work", user_id: 5 }),
-          },
-        },
-      );
+      let createUserFolder;
 
-      const result = await createUserFolder("Work", 5);
+      try {
+        ({ createUserFolder } = await esmock(
+          "../../src/services/folderService.js",
+          {
+            "../../src/repositories/folderRepository.js": {
+              createFolder: sinon
+                .stub()
+                .resolves({ id: 1, name: "Work", user_id: 5 }),
+            },
+          },
+        ));
+      } catch (error) {
+        expect.fail(`Failed to load folder service: ${error.message}`);
+      }
+
+      let result;
+      try {
+        result = await createUserFolder("Work", 5);
+      } catch (error) {
+        expect.fail(`Failed to create folder: ${error.message}`);
+      }
 
       expect(result).to.deep.equal({ id: 1, name: "Work", user_id: 5 });
     });
@@ -50,18 +61,29 @@ describe("folderService", () => {
 
   describe("getUserFolders", () => {
     it("should return the folders for the requested user", async () => {
-      const { getUserFolders } = await esmock(
-        "../../src/services/folderService.js",
-        {
-          "../../src/repositories/folderRepository.js": {
-            getFoldersByUserId: sinon
-              .stub()
-              .resolves([{ id: 1, name: "Work", user_id: 5 }]),
-          },
-        },
-      );
+      let getUserFolders;
 
-      const result = await getUserFolders(5);
+      try {
+        ({ getUserFolders } = await esmock(
+          "../../src/services/folderService.js",
+          {
+            "../../src/repositories/folderRepository.js": {
+              getFoldersByUserId: sinon
+                .stub()
+                .resolves([{ id: 1, name: "Work", user_id: 5 }]),
+            },
+          },
+        ));
+      } catch (error) {
+        expect.fail(`Failed to load folder service: ${error.message}`);
+      }
+
+      let result;
+      try {
+        result = await getUserFolders(5);
+      } catch (error) {
+        expect.fail(`Failed to get user folders: ${error.message}`);
+      }
 
       expect(result).to.deep.equal([{ id: 1, name: "Work", user_id: 5 }]);
     });
@@ -90,7 +112,12 @@ describe("folderService", () => {
       const queryStub = sinon.stub(pool, "query").resolves({ rows: fakeFolders });
       const loggerStub = sinon.stub(logger, "error");
 
-      const result = await getFoldersByUserId(5);
+      let result;
+      try {
+        result = await getFoldersByUserId(5);
+      } catch (error) {
+        expect.fail(`Failed to query user folders: ${error.message}`);
+      }
 
       expect(queryStub.firstCall.args[0]).to.match(/WHERE user_id = \$1/);
       expect(queryStub.firstCall.args[0]).to.match(/ORDER BY created_at ASC, id ASC/);
