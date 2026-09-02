@@ -2,6 +2,7 @@ import {
   createFolder,
   updateFolder,
   deleteFolder,
+  getFoldersByUserId,
 } from "../repositories/folderRepository.js";
 
 import appError from "../utils/appError.js";
@@ -16,6 +17,10 @@ async function createUserFolder(name, userId) {
     }
     throw new appError("Failed to create folder", 500);
   }
+}
+
+async function getUserFolders(userId) {
+  return getFoldersByUserId(userId);
 }
 
 async function updateUserFolder(folderId, name, userId) {
@@ -52,4 +57,4 @@ async function deleteUserFolder(folderId, userId) {
   }
 }
 
-export { createUserFolder, updateUserFolder, deleteUserFolder };
+export { createUserFolder, getUserFolders, updateUserFolder, deleteUserFolder };

@@ -6,10 +6,21 @@ const Header = ({
   user,
   handleLogout,
   handleOpenProfile,
+  onOpenSidebar,
 }) => {
   return (
     <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0b0f14]/95 backdrop-blur m-auto ">
       <div className="flex h-20 items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <button
+          type="button"
+          onClick={onOpenSidebar}
+          aria-label="Open categories"
+          title="Open categories"
+          className="flex h-10 w-10 shrink-0 items-center justify-center text-3xl font-bold leading-none text-white transition hover:text-orange-400 lg:hidden"
+        >
+          ≡
+        </button>
+
         {/* Mobile logo */}
         <div className="flex items-center lg:hidden">
           <span className="font-bold text-white">
@@ -18,7 +29,7 @@ const Header = ({
         </div>
 
         {/* Search */}
-        <div className="relative left-10 hidden mx-auto w-full max-w-2xl lg:block lg:mx-0">
+        <div className="relative hidden min-w-0 flex-1 max-w-2xl lg:block lg:mx-0">
           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500">
             ⌕
           </span>

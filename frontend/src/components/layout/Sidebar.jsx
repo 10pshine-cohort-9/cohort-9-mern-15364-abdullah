@@ -7,14 +7,38 @@ const Sidebar = ({
   notes,
   setDeleteFolderTarget,
   setDeleteFolderError,
+  isMobileOpen = false,
+  onClose = () => {},
 }) => {
   return (
-    <aside className="fixed left-0 top-0 hidden h-screen w-64 border-r border-white/10 bg-[#0d1218] lg:flex lg:flex-col">
+    <>
+      {isMobileOpen && (
+        <button
+          type="button"
+          aria-label="Close categories"
+          onClick={onClose}
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`${isMobileOpen ? "flex" : "hidden"} fixed left-0 top-0 z-60 h-screen w-[min(20rem,calc(100%-3rem))] flex-col border-r border-white/10 bg-[#0d1218] lg:flex lg:w-64`}
+      >
       {/* Logo */}
-      <div className="flex h-20 items-center border-b border-white/10 px-6">
+      <div className="flex h-20 items-center justify-between border-b border-white/10 px-6">
         <span className="text-xl font-bold tracking-tight text-white">
           Focus<span className="text-orange-500">Note</span>
         </span>
+
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close categories"
+          title="Close categories"
+          className="text-2xl leading-none text-gray-400 hover:text-white lg:hidden"
+        >
+          ×
+        </button>
       </div>
 
       {/* Sidebar content */}
@@ -22,7 +46,10 @@ const Sidebar = ({
         {/* All Notes */}
         <button
           type="button"
-          onClick={() => setSelectedFolder("All Notes")}
+          onClick={() => {
+            setSelectedFolder("All Notes");
+            onClose();
+          }}
           className={`mb-6 flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm transition ${
             selectedFolder === "All Notes"
               ? "bg-orange-500 font-medium text-black"
@@ -43,6 +70,7 @@ const Sidebar = ({
           <button
             type="button"
             onClick={() => setShowFolderInput(true)}
+            aria-label="Create category"
             className="text-lg text-gray-500 transition hover:text-orange-500"
             title="Create category"
           >
@@ -64,7 +92,10 @@ const Sidebar = ({
                 {/* Folder name */}
                 <button
                   type="button"
-                  onClick={() => setSelectedFolder(folder.name)}
+                  onClick={() => {
+                    setSelectedFolder(folder.name);
+                    onClose();
+                  }}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
                   <span className="truncate">{folder.name}</span>
@@ -91,17 +122,8 @@ const Sidebar = ({
                             Number(note.folder_id) === Number(folder.id),
                         );
 
-                        if (notesInFolder.length > 0) {
-                          setDeleteFolderTarget({
-                            ...folder,
-                            notes: notesInFolder,
-                          });
-                          setDeleteFolderError("");
-                          return;
-                        }
-
-                        setDeleteFolderTarget(folder);
                         setDeleteFolderError("");
+                        setDeleteFolderTarget({ ...folder, notes: notesInFolder });
                       }}
                       className="rounded-lg px-2 py-1 text-xs text-gray-400 hover:bg-red-500/10 hover:text-red-400"
                       title="Delete folder"
@@ -115,7 +137,8 @@ const Sidebar = ({
           ))}
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 

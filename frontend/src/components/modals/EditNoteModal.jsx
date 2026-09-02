@@ -9,9 +9,9 @@ const EditNoteModal = ({
   onClose,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
       <div
-        className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#151b23] p-5 shadow-2xl"
+          className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#151b23] p-3 shadow-2xl sm:p-5"
       >
         <div className="mb-5 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Edit Note</h3>

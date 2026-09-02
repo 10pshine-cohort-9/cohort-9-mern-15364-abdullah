@@ -69,4 +69,27 @@ async function getFolderById(folderId, userId) {
   }
 }
 
-export { createFolder, updateFolder, deleteFolder, getFolderById };
+async function getFoldersByUserId(userId) {
+  const query = `
+    SELECT *
+    FROM folders
+    WHERE user_id = $1
+    ORDER BY created_at ASC, id ASC;
+  `;
+
+  try {
+    const result = await pool.query(query, [userId]);
+    return result.rows;
+  } catch (error) {
+    logger.error({ err: error }, "Error fetching user folders");
+    throw error;
+  }
+}
+
+export {
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  getFolderById,
+  getFoldersByUserId,
+};
