@@ -102,6 +102,11 @@ This project is a comprehensive PERN-style full-stack application that demonstra
 - **Request Logging** - Structured logging with Pino for debugging and monitoring
 - **Database Integration** - Full PostgreSQL integration with proper schema
 
+### Recent Frontend Updates
+- **Responsive Sidebar** - Open and close note categories from the mobile dashboard
+- **Coordinated Modals** - Create, edit, delete, and details actions close conflicting views before opening
+- **Responsive Rich Text Editor** - Compact toolbar and editor layout for smaller screens
+
 ---
 
 ## Quick Start
@@ -263,6 +268,7 @@ This runs Jest tests with React Testing Library for component testing.
 - `DELETE /api/notes/:id` - Delete a note
 
 ### Folders
+- `GET /api/folders` - Get all folders for the authenticated user
 - `POST /api/folders` - Create a new folder
 - `PUT /api/folders/:id` - Update a folder
 - `DELETE /api/folders/:id` - Delete a folder

@@ -1,5 +1,6 @@
 import {
   createUserFolder,
+  getUserFolders,
   updateUserFolder,
   deleteUserFolder,
 } from "../services/folderService.js";
@@ -41,6 +42,25 @@ async function createFolder(req, res) {
       success: true,
       message: "Folder created successfully",
       data: folder,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+
+    return res.status(statusCode).json({
+      success: false,
+      message: statusCode === 500 ? "Internal server error" : error.message,
+    });
+  }
+}
+
+async function getFolders(req, res) {
+  try {
+    const folders = await getUserFolders(req.user.id);
+
+    return res.status(200).json({
+      success: true,
+      message: "Folders fetched successfully",
+      data: folders,
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -114,4 +134,4 @@ async function deleteFolder(req, res) {
   }
 }
 
-export { createFolder, updateFolder, deleteFolder };
+export { createFolder, getFolders, updateFolder, deleteFolder };

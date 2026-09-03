@@ -94,10 +94,12 @@ describe("useFolders", () => {
   it("should fetch the user's folders from the server", async () => {
     const { getFolders } = jest.requireMock("../api/foldersApi.js");
     localStorage.setItem("token", "test-token");
-    getFolders.mockResolvedValue([
-      { id: "7", name: "Server Folder" },
-      { id: "invalid", name: "Ignored Folder" },
-    ]);
+    getFolders.mockResolvedValue({
+      data: [
+        { id: "7", name: "Server Folder" },
+        { id: "invalid", name: "Ignored Folder" },
+      ],
+    });
 
     const { result } = renderHook(() => useFolders(5));
 
@@ -107,5 +109,18 @@ describe("useFolders", () => {
       ]);
     });
     expect(getFolders).toHaveBeenCalledWith("test-token");
+  });
+
+  it("should keep cached folders when the server request fails", async () => {
+    const { getFolders } = jest.requireMock("../api/foldersApi.js");
+    const cachedFolders = [{ id: 3, name: "Cached Folder" }];
+    localStorage.setItem("focusnote-folders-5", JSON.stringify(cachedFolders));
+    localStorage.setItem("token", "test-token");
+    getFolders.mockRejectedValue(new Error("Network failure"));
+
+    const { result } = renderHook(() => useFolders(5));
+
+    await waitFor(() => expect(getFolders).toHaveBeenCalledWith("test-token"));
+    expect(result.current.folders).toEqual(cachedFolders);
   });
 });

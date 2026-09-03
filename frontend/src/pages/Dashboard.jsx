@@ -23,6 +23,7 @@ const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [showProfile, setShowProfile] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showFolderInput, setShowFolderInput] = useState(false);
   const [newFolder, setNewFolder] = useState("");
 
@@ -77,6 +78,14 @@ const Dashboard = () => {
   const [editFolderName, setEditFolderName] = useState("");
 
   const [deleteFolderTarget, setDeleteFolderTarget] = useState(null);
+
+  const handleOpenCreateFolder = () => {
+    setIsMobileSidebarOpen(false);
+    setEditingFolder(null);
+    setDeleteFolderTarget(null);
+    setDeleteFolderError("");
+    setShowFolderInput(true);
+  };
 
   const handleLogout = () => {
     logout();
@@ -138,7 +147,21 @@ const Dashboard = () => {
     }
   };
 
+  const handleOpenCreateNote = () => {
+    setIsMobileSidebarOpen(false);
+    setEditingFolder(null);
+    setDeleteFolderTarget(null);
+    setDeleteNoteTarget(null);
+    setEditingNote(null);
+    setCreateNoteError("");
+    setShowNoteForm(true);
+  };
+
   const handleEditFolder = (folder) => {
+    setIsMobileSidebarOpen(false);
+    setShowFolderInput(false);
+    setDeleteFolderTarget(null);
+    setDeleteFolderError("");
     setEditingFolder(folder);
     setEditFolderName(folder.name);
   };
@@ -181,7 +204,6 @@ const Dashboard = () => {
         ),
       );
 
-      // Keep the currently selected folder working after rename
       if (selectedFolder === editingFolder.name) {
         setSelectedFolder(updatedFolder.name);
       }
@@ -240,6 +262,19 @@ const Dashboard = () => {
     } catch {
       setDeleteFolderError("Unable to delete this folder. Please try again.");
     }
+  };
+
+  const handleOpenDeleteFolder = (folder) => {
+    const notesInFolder = notes.filter(
+      (note) => Number(note.folder_id) === Number(folder.id),
+    );
+
+    setIsMobileSidebarOpen(false);
+    setShowFolderInput(false);
+    setEditingFolder(null);
+    setEditFolderName("");
+    setDeleteFolderTarget({ ...folder, notes: notesInFolder });
+    setDeleteFolderError("");
   };
 
   const handleCreateNote = async (e) => {
@@ -328,10 +363,24 @@ const Dashboard = () => {
   };
 
   const handleEditNote = (note) => {
+    setIsMobileSidebarOpen(false);
+    setShowNoteForm(false);
+    setEditingFolder(null);
+    setDeleteFolderTarget(null);
+    setDeleteNoteTarget(null);
     setEditingNote(note);
     setEditTitle(note.title);
     setEditContent(note.content);
     setActionError("");
+  };
+
+  const handleOpenDeleteNote = (note) => {
+    setIsMobileSidebarOpen(false);
+    setShowNoteForm(false);
+    setEditingFolder(null);
+    setDeleteFolderTarget(null);
+    setEditingNote(null);
+    setDeleteNoteTarget(note);
   };
 
   const closeEditNoteModal = () => {
@@ -376,17 +425,29 @@ const Dashboard = () => {
     }
   };
 
+  const handleOpenNoteDetails = (note) => {
+    setIsMobileSidebarOpen(false);
+    setShowNoteForm(false);
+    setEditingFolder(null);
+    setDeleteFolderTarget(null);
+    setEditingNote(null);
+    setDeleteNoteTarget(null);
+    setSelectedNote(note);
+  };
+
   return (
     <div className="min-h-screen bg-[#0b0f14] text-white">
       <Sidebar
         selectedFolder={selectedFolder}
         setSelectedFolder={setSelectedFolder}
         folders={folders}
-        setShowFolderInput={setShowFolderInput}
+        setShowFolderInput={handleOpenCreateFolder}
         handleEditFolder={handleEditFolder}
         notes={notes}
-        setDeleteFolderTarget={setDeleteFolderTarget}
+        setDeleteFolderTarget={handleOpenDeleteFolder}
         setDeleteFolderError={setDeleteFolderError}
+        isMobileOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
       />
 
       {/*  MAIN CONTENT */}
@@ -400,6 +461,7 @@ const Dashboard = () => {
           user={user}
           handleLogout={handleLogout}
           handleOpenProfile={handleOpenProfile}
+          onOpenSidebar={() => setIsMobileSidebarOpen(true)}
         />
 
         {/*  PAGE CONTENT */}
@@ -412,45 +474,6 @@ const Dashboard = () => {
             <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
               {user?.full_name || "Your Notes"}
             </h1>
-          </div>
-
-          {/*  MOBILE FOLDER CHIPS */}
-
-          <div className="mb-7 flex gap-2 overflow-x-auto pb-1 lg:hidden">
-            <button
-            type="button"
-              onClick={() => setSelectedFolder("All Notes")}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
-                selectedFolder === "All Notes"
-                  ? "bg-orange-500 text-black"
-                  : "bg-[#1b212a] text-gray-300 hover:bg-white/10"
-              }`}
-            >
-              All Notes
-            </button>
-
-            {folders.map((folder) => (
-              <button
-              type="button"
-                key={folder.id}
-                onClick={() => setSelectedFolder(folder.name)}
-                className={`shrink-0 rounded-full px-4 py-2 text-sm transition ${
-                  selectedFolder === folder.name
-                    ? "bg-orange-500 text-black"
-                    : "bg-[#1b212a] text-gray-300 hover:bg-white/10"
-                }`}
-              >
-                {folder.name}
-              </button>
-            ))}
-
-            <button
-            type="button"
-              onClick={() => setShowFolderInput(true)}
-              className="shrink-0 rounded-full bg-[#1b212a] px-4 py-2 text-lg text-orange-500 hover:bg-white/10"
-            >
-              +
-            </button>
           </div>
 
           {/*  FOLDER CREATION MODAL */}
@@ -512,7 +535,7 @@ const Dashboard = () => {
             type="button"
               onClick={() => {
                 setCreateNoteError("");
-                setShowNoteForm(true);
+                handleOpenCreateNote();
               }}
               className="hidden rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-medium text-black transition hover:bg-orange-500 sm:block"
             >
@@ -525,9 +548,9 @@ const Dashboard = () => {
           <NotesGrid
             notesLoading={notesLoading}
             filteredNotes={filteredNotes}
-            setSelectedNote={setSelectedNote}
+            setSelectedNote={handleOpenNoteDetails}
             handleEditNote={handleEditNote}
-            setDeleteNoteTarget={setDeleteNoteTarget}
+            setDeleteNoteTarget={handleOpenDeleteNote}
             setDeleteTriggerRef={deleteTriggerRef}
             deletingNoteId={deletingNoteId}
           />
@@ -602,7 +625,7 @@ const Dashboard = () => {
             aria-label="Create note"
             onClick={() => {
               setCreateNoteError("");
-              setShowNoteForm(true);
+              handleOpenCreateNote();
             }}
             className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-500 text-2xl font-light text-black shadow-xl transition hover:scale-105"
           >

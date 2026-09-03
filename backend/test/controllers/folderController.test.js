@@ -33,6 +33,49 @@ describe("folderController", () => {
 
   });
 
+  describe("getFolders", () => {
+    it("should return the authenticated user's folders", async () => {
+      const getUserFoldersStub = sinon.stub().resolves([
+        { id: 1, name: "Work", user_id: 5 },
+      ]);
+      const { getFolders } = await esmock("../../src/controllers/folderController.js", {
+        "../../src/services/folderService.js": {
+          getUserFolders: getUserFoldersStub,
+        },
+      });
+      const req = { user: { id: 5 } };
+      const res = createRes();
+
+      await getFolders(req, res);
+
+      expect(res.status.calledWith(200)).to.be.true;
+      expect(res.json.calledWith({
+        success: true,
+        message: "Folders fetched successfully",
+        data: [{ id: 1, name: "Work", user_id: 5 }],
+      })).to.be.true;
+      expect(getUserFoldersStub.calledWith(5)).to.be.true;
+    });
+
+    it("should return a server error when folder retrieval fails", async () => {
+      const { getFolders } = await esmock("../../src/controllers/folderController.js", {
+        "../../src/services/folderService.js": {
+          getUserFolders: sinon.stub().rejects(new Error("DB failure")),
+        },
+      });
+      const req = { user: { id: 5 } };
+      const res = createRes();
+
+      await getFolders(req, res);
+
+      expect(res.status.calledWith(500)).to.be.true;
+      expect(res.json.calledWith({
+        success: false,
+        message: "Internal server error",
+      })).to.be.true;
+    });
+  });
+
   describe("updateFolder", () => {
     it("should return 400 for an invalid folder ID", async () => {
       const { updateFolder } = await esmock("../../src/controllers/folderController.js", {

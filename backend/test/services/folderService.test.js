@@ -1,6 +1,9 @@
 import { expect } from "chai";
 import sinon from "sinon";
 import esmock from "esmock";
+import pool from "../../src/config/db.js";
+import logger from "../../src/config/logger.js";
+import { getFoldersByUserId } from "../../src/repositories/folderRepository.js";
 
 describe("folderService", () => {
   afterEach(() => {
@@ -9,18 +12,29 @@ describe("folderService", () => {
 
   describe("createUserFolder", () => {
     it("should return the created folder on success", async () => {
-      const { createUserFolder } = await esmock(
-        "../../src/services/folderService.js",
-        {
-          "../../src/repositories/folderRepository.js": {
-            createFolder: sinon
-              .stub()
-              .resolves({ id: 1, name: "Work", user_id: 5 }),
-          },
-        },
-      );
+      let createUserFolder;
 
-      const result = await createUserFolder("Work", 5);
+      try {
+        ({ createUserFolder } = await esmock(
+          "../../src/services/folderService.js",
+          {
+            "../../src/repositories/folderRepository.js": {
+              createFolder: sinon
+                .stub()
+                .resolves({ id: 1, name: "Work", user_id: 5 }),
+            },
+          },
+        ));
+      } catch (error) {
+        expect.fail(`Failed to load folder service: ${error.message}`);
+      }
+
+      let result;
+      try {
+        result = await createUserFolder("Work", 5);
+      } catch (error) {
+        expect.fail(`Failed to create folder: ${error.message}`);
+      }
 
       expect(result).to.deep.equal({ id: 1, name: "Work", user_id: 5 });
     });
@@ -42,6 +56,90 @@ describe("folderService", () => {
         expect(err.message).to.equal("Failed to create folder");
         expect(err.statusCode).to.equal(500);
       }
+    });
+  });
+
+  describe("getUserFolders", () => {
+    it("should return the folders for the requested user", async () => {
+      let getUserFolders;
+
+      try {
+        ({ getUserFolders } = await esmock(
+          "../../src/services/folderService.js",
+          {
+            "../../src/repositories/folderRepository.js": {
+              getFoldersByUserId: sinon
+                .stub()
+                .resolves([{ id: 1, name: "Work", user_id: 5 }]),
+            },
+          },
+        ));
+      } catch (error) {
+        expect.fail(`Failed to load folder service: ${error.message}`);
+      }
+
+      let result;
+      try {
+        result = await getUserFolders(5);
+      } catch (error) {
+        expect.fail(`Failed to get user folders: ${error.message}`);
+      }
+
+      expect(result).to.deep.equal([{ id: 1, name: "Work", user_id: 5 }]);
+    });
+
+    it("should propagate repository retrieval errors", async () => {
+      const dbError = new Error("DB connection lost");
+      const { getUserFolders } = await esmock(
+        "../../src/services/folderService.js",
+        {
+          "../../src/repositories/folderRepository.js": {
+            getFoldersByUserId: sinon.stub().rejects(dbError),
+          },
+        },
+      );
+
+      try {
+        await getUserFolders(5);
+        throw new Error("Expected getUserFolders to throw, but it did not");
+      } catch (err) {
+        expect(err).to.equal(dbError);
+      }
+    });
+
+    it("should query folders for a user through the repository", async () => {
+      const fakeFolders = [{ id: 1, name: "Work", user_id: 5 }];
+      const queryStub = sinon.stub(pool, "query").resolves({ rows: fakeFolders });
+      const loggerStub = sinon.stub(logger, "error");
+
+      let result;
+      try {
+        result = await getFoldersByUserId(5);
+      } catch (error) {
+        expect.fail(`Failed to query user folders: ${error.message}`);
+      }
+
+      expect(queryStub.firstCall.args[0]).to.match(/WHERE user_id = \$1/);
+      expect(queryStub.firstCall.args[0]).to.match(/ORDER BY created_at ASC, id ASC/);
+      expect(queryStub.firstCall.args[1]).to.deep.equal([5]);
+      expect(result).to.deep.equal(fakeFolders);
+      expect(loggerStub.called).to.be.false;
+    });
+
+    it("should log and rethrow repository query errors", async () => {
+      const dbError = new Error("connection refused");
+      sinon.stub(pool, "query").rejects(dbError);
+      const loggerStub = sinon.stub(logger, "error");
+
+      try {
+        await getFoldersByUserId(5);
+        throw new Error("Expected getFoldersByUserId to throw, but it did not");
+      } catch (err) {
+        expect(err).to.equal(dbError);
+      }
+
+      expect(loggerStub.calledOnce).to.be.true;
+      expect(loggerStub.firstCall.args[1]).to.equal("Error fetching user folders");
     });
   });
 

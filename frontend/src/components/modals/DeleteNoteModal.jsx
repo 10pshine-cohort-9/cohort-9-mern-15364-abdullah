@@ -9,7 +9,7 @@ const DeleteNoteModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
     >
       <div
         aria-modal="true"
